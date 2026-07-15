@@ -187,7 +187,7 @@
             <div style="display:flex; flex-wrap:wrap; gap:7px; margin-bottom:20px;">
               <span class="tk-chip">React</span><span class="tk-chip">FastAPI</span><span class="tk-chip">PostgreSQL</span><span class="tk-chip">CoinGecko</span><span class="tk-chip">OCR</span><span class="tk-chip">OAuth</span>
             </div>
-            <div style="display:flex; gap:20px;"><a href="https://tradetrack-ai.netlify.app" target="_blank" rel="noopener" class="mono" style="font-size:13px; color:var(--accent);">Live ↗</a><a href="https://github.com/trakshan-mishra" target="_blank" rel="noopener" class="mono" style="font-size:13px; color:var(--mut);">GitHub ↗</a></div>
+            <div style="display:flex; gap:20px;"><a href="https://tradetrack-pro.pages.dev" target="_blank" rel="noopener" class="mono" style="font-size:13px; color:var(--accent);">Live ↗</a><a href="https://github.com/trakshan-mishra" target="_blank" rel="noopener" class="mono" style="font-size:13px; color:var(--mut);">GitHub ↗</a></div>
           </article>
 
           <article data-reveal data-scene="movie" class="tk-proj" style="position:relative; background:var(--surface); backdrop-filter:var(--glass); border:1px solid var(--border); border-radius:24px; padding:32px; transition:transform .5s cubic-bezier(.2,.8,.2,1), box-shadow .5s ease, border-color .5s ease, background .5s;">
@@ -229,52 +229,38 @@
     </section>
 
     <!-- VERIDIA SHOWCASE -->
-    <section id="veridia" style="position:relative; padding:0; margin:0; height:100vh; overflow:hidden;">
-      <!-- top fade bleed from story section -->
-      <div style="position:absolute; top:0; left:0; right:0; height:80px; background:linear-gradient(to bottom, var(--bg), transparent); z-index:5; pointer-events:none;"></div>
+    <section id="veridia" style="padding:100px 0 20px;">
+      <div data-reveal style="position:relative; background:var(--surface); backdrop-filter:var(--glass); border:1px solid var(--border); border-radius:24px; padding:40px; overflow:hidden;">
+        
+        <!-- background decoration -->
+        <div style="position:absolute; inset:0; opacity:0.04; background-image:radial-gradient(var(--accent) 1px, transparent 1px); background-size:24px 24px; pointer-events:none;"></div>
+        <div style="position:absolute; top:-100px; right:-100px; width:400px; height:400px; background:var(--accent); filter:blur(120px); opacity:0.15; border-radius:50%; pointer-events:none;"></div>
 
-      <!-- iframe — live Veridia -->
-      <iframe
-        id="tk-veridia-frame"
-        src="https://veridia-bpq.pages.dev"
-        title="Veridia — open-world 3D portfolio demo"
-        allow="fullscreen"
-        loading="lazy"
-        style="position:absolute; inset:0; width:100%; height:100%; border:none; z-index:1; opacity:0; transition:opacity 1.2s ease;"
-        onload="this.style.opacity='1';"
-      ></iframe>
-
-      <!-- overlay UI — sits above iframe, pointer-events only on the pills/buttons -->
-      <div style="position:absolute; inset:0; z-index:6; pointer-events:none; display:flex; flex-direction:column; justify-content:space-between; padding:28px 32px;">
-
-        <!-- top bar -->
-        <div style="display:flex; align-items:center; justify-content:space-between; pointer-events:auto;">
-          <div data-reveal style="display:flex; align-items:center; gap:12px; background:var(--surface); backdrop-filter:var(--glass); border:1px solid var(--border); border-radius:999px; padding:8px 16px 8px 10px; box-shadow:0 8px 32px var(--shadow);">
-            <span style="width:8px; height:8px; border-radius:50%; background:#4ade80; box-shadow:0 0 8px #4ade8088; flex-shrink:0;"></span>
+        <div style="position:relative; z-index:2; display:flex; flex-direction:column; gap:20px; max-width:640px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <span style="width:8px; height:8px; border-radius:50%; background:#4ade80; box-shadow:0 0 8px #4ade8088;"></span>
             <span class="mono" style="font-size:11px; letter-spacing:0.12em; color:var(--ink2);">LIVE · VERIDIA</span>
             <span style="width:1px; height:14px; background:var(--border);"></span>
             <span class="mono" style="font-size:11px; color:var(--mut);">veridia-bpq.pages.dev</span>
           </div>
-          <a href="https://veridia-bpq.pages.dev" target="_blank" rel="noopener"
-             style="display:inline-flex; align-items:center; gap:8px; height:38px; padding:0 16px; background:var(--pill); color:var(--pill-ink); border:none; border-radius:999px; font-family:inherit; font-weight:600; font-size:13px; cursor:pointer; text-decoration:none; box-shadow:0 8px 28px var(--shadow); transition:transform .2s ease, box-shadow .2s ease;"
-             onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 14px 40px var(--shadow)'"
-             onmouseout="this.style.transform='';this.style.boxShadow='0 8px 28px var(--shadow)'"
-          >Open fullscreen ↗</a>
-        </div>
-
-        <!-- bottom caption -->
-        <div data-reveal style="pointer-events:auto; max-width:560px;">
-          <div class="mono" style="font-size:11px; color:var(--accent); letter-spacing:0.14em; margin-bottom:10px;">SIDE PROJECT · 2026 · OPEN-WORLD 3D</div>
-          <h2 class="serif" style="font-size:clamp(28px,4vw,48px); line-height:1.04; letter-spacing:-0.015em; margin-bottom:12px; text-shadow:0 2px 24px var(--shadow);">Veridia — <span class="it" style="color:var(--accent);">explore the world.</span></h2>
-          <p style="font-size:15px; line-height:1.6; color:var(--ink2); max-width:46ch; background:var(--surface); backdrop-filter:var(--glass); border:1px solid var(--border); border-radius:14px; padding:14px 18px; box-shadow:0 8px 32px var(--shadow);">A playable open-world demo built entirely in vanilla JS + WebGL — no engine, no framework. WASD to walk, visit all five gates. Deployed on Cloudflare Pages.</p>
-          <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:14px;">
+          
+          <h2 class="serif" style="font-size:clamp(32px,4.5vw,52px); line-height:1.04; letter-spacing:-0.015em;">Veridia — <span class="it" style="color:var(--accent);">explore the world.</span></h2>
+          
+          <p style="font-size:16px; line-height:1.6; color:var(--ink2); margin-bottom:10px;">A playable open-world demo built entirely in vanilla JS + WebGL — no engine, no framework. WASD to walk, visit all five gates to read the story, and rest by the tavern. Deployed on Cloudflare Pages.</p>
+          
+          <div style="display:flex; flex-wrap:wrap; gap:8px;">
             <span class="tk-chip">WebGL</span><span class="tk-chip">Vanilla JS</span><span class="tk-chip">3D Assets</span><span class="tk-chip">Cloudflare Pages</span>
+          </div>
+
+          <div style="margin-top:16px;">
+            <a href="https://veridia-bpq.pages.dev" target="_blank" rel="noopener"
+               style="display:inline-flex; align-items:center; gap:8px; height:46px; padding:0 26px; background:var(--pill); color:var(--pill-ink); border:none; border-radius:999px; font-family:inherit; font-weight:600; font-size:14px; cursor:pointer; text-decoration:none; transition:transform .2s ease, box-shadow .2s ease; box-shadow:0 4px 14px rgba(0,0,0,0.2);"
+               onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.3)'"
+               onmouseout="this.style.transform='';this.style.boxShadow='0 4px 14px rgba(0,0,0,0.2)'"
+            >Play Veridia Fullscreen ↗</a>
           </div>
         </div>
       </div>
-
-      <!-- bottom fade into experience -->
-      <div style="position:absolute; bottom:0; left:0; right:0; height:80px; background:linear-gradient(to top, var(--bg), transparent); z-index:5; pointer-events:none;"></div>
     </section>
 
     <!-- EXPERIENCE -->
@@ -948,7 +934,7 @@ class Component extends DCLogic {
         actions: [['▶ Play the demo', () => this.openDemo()], ['GitHub ↗', () => window.open('https://github.com/trakshan-mishra/Diffcontext', '_blank')]] },
       { id: 'trade', x: W / 2 - 620, y: H / 2 - 40, label: 'TradeTrack Pro', kicker: 'FINTECH · 2025',
         body: 'Real-time market data, GST tax calc, 94%-accurate OCR bill scanning. React · FastAPI · Postgres.',
-        actions: [['Live ↗', () => window.open('https://tradetrack-ai.netlify.app', '_blank')]] },
+        actions: [['Live ↗', () => window.open('https://tradetrack-pro.pages.dev', '_blank')]] },
       { id: 'movie', x: W / 2 + 620, y: H / 2 - 40, label: 'MovieMX', kicker: 'STREAMING · 2025',
         body: 'Full-stack streaming platform — TMDB, auth, content-delivery & ad backend. Mobile-first.',
         actions: [['Live ↗', () => window.open('https://moviemx.pages.dev', '_blank')]] },
