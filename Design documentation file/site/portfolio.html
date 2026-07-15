@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  :root {
+    --bg:#F0EBE0; --bg2:#EAE3D5; --surface:rgba(252,250,244,0.66); --surface-solid:#FCFAF4;
+    --border:#E4DCCB; --border-hot:#E8A98D; --ink:#211D17; --ink2:#5F584C; --mut:#8A8272; --mut2:#A79C86;
+    --accent:#BF5230; --accent-ink:#F7F2E8; --pill:#211D17; --pill-ink:#F0EBE0;
+    --shadow:rgba(60,40,20,0.14); --glass:blur(14px) saturate(1.1);
+    --accent-rgb:191,82,48; --neutral-rgb:150,135,110; --term:#211D17; --term-line:#322C24;
+  }
+  html[data-theme="dark"] {
+    --bg:#141110; --bg2:#1B1714; --surface:rgba(34,28,23,0.55); --surface-solid:#211C17;
+    --border:#332C24; --border-hot:#8A4B33; --ink:#F0EBE0; --ink2:#C7BEAF; --mut:#8F8678; --mut2:#6E665A;
+    --accent:#E8703F; --accent-ink:#1C120C; --pill:#F0EBE0; --pill-ink:#141110;
+    --shadow:rgba(0,0,0,0.5);
+    --accent-rgb:232,112,63; --neutral-rgb:125,113,97; --term:#0E0C0A; --term-line:#292219;
+  }
+  body { background: var(--bg); color: var(--ink); font-family: 'Geist', system-ui, sans-serif; -webkit-font-smoothing: antialiased; transition: background .5s ease, color .5s ease; }
+  a { color: var(--ink); text-decoration: none; }
+  a:hover { color: var(--accent); }
+  ::selection { background: rgba(var(--accent-rgb),0.22); }
+  ::-webkit-scrollbar { width: 11px; }
+  ::-webkit-scrollbar-track { background: var(--bg2); }
+  ::-webkit-scrollbar-thumb { background: var(--mut2); border-radius: 8px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+  .serif { font-family: 'Instrument Serif', Georgia, serif; font-weight: 400; }
+  .it { font-family: 'Instrument Serif', Georgia, serif; font-style: italic; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  @keyframes tk-eq { 0%,100%{transform:scaleY(0.4);} 50%{transform:scaleY(1);} }
+  @keyframes tk-typing { 0%{opacity:.25;transform:translateY(0);} 50%{opacity:1;transform:translateY(-3px);} 100%{opacity:.25;transform:translateY(0);} }
+  @keyframes tk-blink { 0%,49%{opacity:1;} 50%,100%{opacity:0;} }
+  @keyframes tk-float { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-9px);} }
+  @keyframes tk-pop { 0%{opacity:0;transform:scale(0.96) translateY(14px);} 100%{opacity:1;transform:scale(1) translateY(0);} }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .tk-anim { animation: none !important; } }
+</style>
+</helmet>
+<div id="tk-root" style="position:relative; min-height:100vh; overflow-x:hidden;">
+
+  <!-- scroll progress -->
+  <div id="tk-progress" style="position:fixed; top:0; left:0; height:2px; width:0%; background:var(--accent); z-index:90;"></div>
+
+  <!-- BACKGROUND SCENE ENGINE -->
+  <canvas id="tk-bg" style="position:fixed; inset:0; width:100%; height:100%; z-index:0; pointer-events:none;"></canvas>
+  <div id="tk-scene-label" class="mono" style="position:fixed; z-index:1; left:50%; top:50%; transform:translate(-50%,-50%); font-size:12px; letter-spacing:0.18em; color:rgba(var(--neutral-rgb),0.55); pointer-events:none; opacity:0; transition:opacity .5s ease; text-align:center;"></div>
+
+  <!-- NAV -->
+  <nav style="position:fixed; top:0; left:0; right:0; z-index:60; display:flex; align-items:center; justify-content:center; padding:16px 0;">
+    <div style="width:100%; max-width:1160px; padding:0 24px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+      <a href="#top" style="display:flex; align-items:center; gap:11px; font-weight:600; font-size:16px; letter-spacing:-0.01em; background:var(--surface); backdrop-filter:var(--glass); border:1px solid var(--border); border-radius:999px; padding:8px 16px 8px 8px; box-shadow:0 6px 24px var(--shadow); transition:background .5s, border-color .5s;">
+        <span style="display:inline-flex; width:26px; height:26px; align-items:center; justify-content:center; background:var(--accent); color:var(--accent-ink); border-radius:8px; font-family:'Instrument Serif',serif; font-style:italic; font-size:16px;">t</span>
+        <span class="tk-navname">Trakshan Mishra</span>
+      </a>
+      <div style="display:flex; align-items:center; gap:6px; background:var(--surface); backdrop-filter:var(--glass); border:1px solid var(--border); border-radius:999px; padding:6px; box-shadow:0 6px 24px var(--shadow); transition:background .5s, border-color .5s;">
+        <a href="#work" class="tk-navlink" style="font-size:14px; color:var(--ink2); padding:6px 10px;">Work</a>
+        <a href="#experience" class="tk-navlink" style="font-size:14px; color:var(--ink2); padding:6px 10px;">Experience</a>
+        <a href="#about" class="tk-navlink" style="font-size:14px; color:var(--ink2); padding:6px 10px;">About</a>
+        <button id="tk-theme" title="Toggle theme" style="display:flex; align-items:center; justify-content:center; width:38px; height:34px; background:var(--bg); border:1px solid var(--border); border-radius:999px; cursor:pointer; font-size:14px; color:var(--ink); transition:transform .3s;">◐</button>
+        <button id="tk-open-palette" style="display:flex; align-items:center; gap:7px; height:34px; padding:0 12px; background:var(--pill); color:var(--pill-ink); border:none; border-radius:999px; font-family:inherit; font-size:13px; cursor:pointer;">
+          Jump <kbd class="mono" style="font-size:11px; background:rgba(128,128,128,0.25); border-radius:4px; padding:2px 5px;">⌘K</kbd>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <div id="top" style="position:relative; z-index:2; max-width:1160px; margin:0 auto; padding:0 24px;">
+
+    <!-- OPEN WORLD HERO -->
+    <header id="tk-world-wrap" style="position:relative; height:100vh; margin:0 -24px; overflow:hidden;">
+      <canvas id="tk-world" style="position:absolute; inset:0; width:100%; height:100%; touch-action:pan-y; cursor:crosshair;"></canvas>
+      <div id="tk-joy" style="position:absolute; left:22px; bottom:88px; width:104px; height:104px; border-radius:50%; background:var(--surface); backdrop-filter:var(--glass); border:1px solid var(--border); z-index:4; touch-action:none; display:none; align-items:center; justify-content:center;">
+        <div id="tk-joy-knob" style="width:42px; height:42px; border-radius:50%; background:var(--accent); opacity:0.85; transition:transform .05s linear;"></div>
+      </div>
+
+      <!-- title overlay -->
+      <div style="position:absolute; top:96px; left:0; right:0; text-align:center; pointer-events:none; z-index:3;">
+        <div class="mono" style="font-size:11px; letter-spacing:0.22em; color:var(--accent); margin-bottom:10px;">TRAKSHAN MISHRA · FULL-STACK & AI/ML</div>
+        <h1 class="serif" style="font-size:clamp(40px,6.4vw,76px); line-height:0.98; letter-spacing:-0.02em; text-shadow:0 2px 30px var(--shadow);">Wander through <span class="it" style="color:var(--accent);">my work.</span></h1>
+      </div>
+
+      <!-- HUD: controls hint -->
+      <div id="tk-world-hint" class="mono" style="position:absolute; bottom:88px; left:0; right:0; text-align:center; font-size:12px; color:var(--ink2); pointer-events:none; z-index:3; transition:opacity .5s;">
+        <span style="background:var(--surface); backdrop-filter:var(--glass); border:1px solid var(--border); border-radius:999px; padding:9px 16px;">WASD to walk · hold SHIFT to sprint · joystick on touch · visit all five gates</span>
+      </div>
+
+      <!-- station card -->
+      <div id="tk-world-card" style="position:absolute; left:50%; bottom:120px; transform:translateX(-50%) translateY(16px); width:400px; max-width:calc(100vw - 40px); background:var(--surface); backdrop-filter:var(--glass); border:1px solid var(--border-hot); border-radius:18px; padding:20px 22px; z-index:4; opacity:0; pointer-events:none; transition:opacity .3s ease, transform .3s ease; box-shadow:0 24px 60px var(--shadow);">
+        <div id="tk-wc-kicker" class="mono" style="font-size:10px; color:var(--accent); letter-spacing:0.12em; margin-bottom:8px;">STATION</div>
+        <div id="tk-wc-title" class="serif" style="font-size:26px; margin-bottom:6px;">—</div>
+        <div id="tk-wc-body" style="font-size:13.5px; line-height:1.55; color:var(--ink2); margin-bottom:12px;">—</div>
+        <div id="tk-wc-actions" style="display:flex; flex-wrap:wrap; gap:10px;"></div>
+      </div>
+
+      <!-- quest HUD -->
+      <div style="position:absolute; top:96px; left:22px; z-index:3; background:var(--surface); backdrop-filter:var(--glass); border:1px solid var(--border); border-radius:14px; padding:12px 16px; pointer-events:none;">
+        <div class="mono" style="font-size:9px; letter-spacing:0.16em; color:var(--accent); margin-bottom:5px;">QUEST</div>
+        <div style="font-size:13px; font-weight:600;">Visit the five gates</div>
+        <div id="tk-quest-dots" style="display:flex; gap:5px; margin-top:8px;">
+          <span class="tk-qdot"></span><span class="tk-qdot"></span><span class="tk-qdot"></span><span class="tk-qdot"></span><span class="tk-qdot"></span>
+        </div>
+        <div id="tk-quest-done" class="mono" style="display:none; font-size:10px; color:var(--accent); margin-top:7px;">✓ quest complete — sudo hire unlocked</div>
+      </div>
+      <style>.tk-qdot{width:9px;height:9px;border-radius:50%;background:rgba(var(--neutral-rgb),0.35);transition:background .4s, box-shadow .4s;}.tk-qdot.lit{background:var(--accent);box-shadow:0 0 8px rgba(var(--accent-rgb),0.8);}</style>
+
+      <!-- minimap -->
+      <canvas id="tk-minimap" width="132" height="92" style="position:absolute; right:22px; bottom:88px; width:132px; height:92px; border-radius:12px; border:1px solid var(--border); background:var(--surface); backdrop-filter:var(--glass); z-index:3;"></canvas>
+
+      <!-- scroll cue -->
+      <a href="#work" class="mono" style="position:absolute; bottom:26px; left:0; right:0; text-align:center; font-size:11px; letter-spacing:0.14em; color:var(--mut); z-index:3;">SCROLL FOR THE CLASSIC SITE ↓</a>
+    </header>
+
+    <!-- stat strip -->
+    <div data-reveal style="display:flex; flex-wrap:wrap; align-items:center; gap:28px 40px; padding:34px 0 10px; border-bottom:1px solid var(--border);">
+      <div>
+        <div class="mono" style="font-size:11px; color:var(--mut); letter-spacing:0.06em; margin-bottom:6px;">TOKEN REDUCTION</div>
+        <div style="display:flex; align-items:baseline; gap:8px;"><span id="tk-counter" class="serif" style="font-size:clamp(30px,4vw,42px); line-height:1;">10,747</span><span class="mono" style="font-size:14px; font-weight:500; color:var(--accent);">-69.5%</span></div>
+      </div>
+      <div class="tk-vline" style="width:1px; height:40px; background:var(--border);"></div>
+      <div><div class="mono" style="font-size:11px; color:var(--mut); letter-spacing:0.06em; margin-bottom:6px;">BENCHMARK PRECISION</div><div class="serif" style="font-size:clamp(30px,4vw,42px); line-height:1;">79.6%</div></div>
+      <div class="tk-vline" style="width:1px; height:40px; background:var(--border);"></div>
+      <div><div class="mono" style="font-size:11px; color:var(--mut); letter-spacing:0.06em; margin-bottom:6px;">OCR ACCURACY</div><div class="serif" style="font-size:clamp(30px,4vw,42px); line-height:1;">94%</div></div>
+      <div style="margin-left:auto; display:flex; gap:12px;">
+        <button id="tk-cta-ai" style="display:inline-flex; align-items:center; gap:9px; height:46px; padding:0 22px; background:var(--accent); color:var(--accent-ink); border:none; border-radius:999px; font-family:inherit; font-weight:600; font-size:15px; cursor:pointer; box-shadow:0 10px 30px rgba(var(--accent-rgb),0.28);">Ask my AI</button>
+        <button id="tk-cta-demo" style="display:inline-flex; align-items:center; gap:9px; height:46px; padding:0 20px; background:var(--surface); backdrop-filter:var(--glass); border:1px solid var(--border); border-radius:999px; font-family:inherit; font-weight:500; font-size:15px; color:var(--ink); cursor:pointer;">▶ DiffContext demo</button>
+      </div>
+    </div>
+
+    <!-- WORK -->
+    <section id="work" style="padding:60px 0 40px;">
+      <div data-reveal style="display:flex; align-items:baseline; gap:16px; margin-bottom:14px;">
+        <span class="mono" style="font-size:12px; color:var(--accent); letter-spacing:0.1em;">01</span>
+        <h2 class="serif" style="font-size:clamp(32px,5vw,44px); letter-spacing:-0.01em;">Selected work</h2>
+      </div>
+      <p data-reveal style="color:var(--ink2); font-size:16px; max-width:52ch; margin-bottom:44px;">Hover a card — the background comes alive. Click DiffContext to <span style="color:var(--accent);">play the real thing</span>.</p>
+
+      <div style="display:flex; flex-direction:column; gap:18px;">
+
+        <!-- DiffContext -->
+        <article data-reveal data-scene="diff" id="tk-card-diff" class="tk-proj" role="button" tabindex="0" style="position:relative; background:var(--surface); backdrop-filter:var(--glass); border:1px solid var(--border); border-radius:24px; padding:36px; transition:transform .5s cubic-bezier(.2,.8,.2,1), box-shadow .5s ease, border-color .5s ease, background .5s; cursor:pointer;">
+          <div class="tk-grid2" style="display:grid; grid-template-columns:1.15fr 0.85fr; gap:40px; align-items:center;">
+            <div>
+              <div class="mono" style="font-size:11px; color:var(--accent); letter-spacing:0.08em; margin-bottom:14px;">FEATURED · 2026 · CONTEXT ENGINE · <span style="border:1px solid var(--border-hot); border-radius:999px; padding:2px 8px;">▶ CLICK TO PLAY</span></div>
+              <h3 class="serif" style="font-size:clamp(30px,4vw,40px); letter-spacing:-0.01em; margin-bottom:14px;">DiffContext</h3>
+              <p style="font-size:16px; line-height:1.6; color:var(--ink2); margin-bottom:22px; max-width:46ch;">A repository-scale context-selection engine for code LLMs. A <code class="mono" style="color:var(--accent);">sys.settrace()</code> tracer builds gold-standard execution graphs, then prunes prompts from <strong>35,270 → 10,747 tokens</strong> while preserving task-relevant context.</p>
+              <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:24px;">
+                <span class="tk-chip">Python</span><span class="tk-chip">AST</span><span class="tk-chip">Dependency Graphs</span><span class="tk-chip">LLM Evaluation</span><span class="tk-chip">Agentic Coding</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:22px; flex-wrap:wrap;">
+                <a href="https://github.com/trakshan-mishra/Diffcontext" target="_blank" rel="noopener" class="mono" style="font-size:13px; border-bottom:1px solid var(--accent); padding-bottom:2px;">GitHub ↗</a>
+                <div class="mono" style="display:flex; gap:20px; font-size:13px; color:var(--mut);"><span><b style="color:var(--accent);">-69.5%</b> tokens</span><span><b style="color:var(--ink);">79.6%</b> precision</span></div>
+              </div>
+            </div>
+            <div style="position:relative; height:280px; background:rgba(var(--neutral-rgb),0.12); border:1px solid var(--border); border-radius:16px; overflow:hidden;">
+              <canvas id="tk-graph" style="position:absolute; inset:0; width:100%; height:100%; cursor:grab;"></canvas>
+              <div class="mono" style="position:absolute; top:12px; left:14px; font-size:10px; color:var(--mut); pointer-events:none;">requests bench · <span id="tk-graph-nodes">249</span> nodes · 181 edges</div>
+              <button id="tk-prune" class="mono" style="position:absolute; bottom:12px; left:12px; display:flex; align-items:center; gap:7px; height:30px; padding:0 12px; background:var(--surface-solid); border:1px solid var(--border); border-radius:999px; font-size:11px; color:var(--ink); cursor:pointer;">
+                <span id="tk-prune-dot" style="width:6px; height:6px; border-radius:50%; background:var(--mut2);"></span><span id="tk-prune-label">prune context</span>
+              </button>
+              <span class="mono" style="position:absolute; bottom:14px; right:14px; font-size:10px; color:var(--mut2); pointer-events:none;">drag me</span>
+            </div>
+          </div>
+        </article>
+
+        <div class="tk-grid2" style="display:grid; grid-template-columns:1fr 1fr; gap:18px;">
+          <article data-reveal data-scene="trade" class="tk-proj" style="position:relative; background:var(--surface); backdrop-filter:var(--glass); border:1px solid var(--border); border-radius:24px; padding:32px; transition:transform .5s cubic-bezier(.2,.8,.2,1), box-shadow .5s ease, border-color .5s ease, background .5s;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; gap:10px;">
+              <div>
+                <div class="mono" style="font-size:11px; color:var(--mut); letter-spacing:0.08em; margin-bottom:12px;">FINTECH · 2025</div>
+                <h3 class="serif" style="font-size:32px;">TradeTrack Pro</h3>
+              </div>
+              <span class="mono" style="font-size:11px; font-weight:500; color:var(--accent); background:rgba(var(--accent-rgb),0.1); border-radius:999px; padding:5px 11px; white-space:nowrap;">94% OCR</span>
+            </div>
+            <p style="font-size:15px; line-height:1.6; color:var(--ink2); margin-bottom:18px;">Real-time market data, localized GST tax calc, OCR bill-scanning &amp; a normalized Postgres schema behind OAuth.</p>
+            <div style="display:flex; flex-wrap:wrap; gap:7px; margin-bottom:20px;">
+              <span class="tk-chip">React</span><span class="tk-chip">FastAPI</span><span class="tk-chip">PostgreSQL</span><span class="tk-chip">CoinGecko</span><span class="tk-chip">OCR</span><span class="tk-chip">OAuth</span>
+            </div>
+            <div style="display:flex; gap:20px;"><a href="https://tradetrack-pro.pages.dev" target="_blank" rel="noopener" class="mono" style="font-size:13px; color:var(--accent);">Live ↗</a><a href="https://github.com/trakshan-mishra" target="_blank" rel="noopener" class="mono" style="font-size:13px; color:var(--mut);">GitHub ↗</a></div>
+          </article>
+
+          <article data-reveal data-scene="movie" class="tk-proj" style="position:relative; background:var(--surface); backdrop-filter:var(--glass); border:1px solid var(--border); border-radius:24px; padding:32px; transition:transform .5s cubic-bezier(.2,.8,.2,1), box-shadow .5s ease, border-color .5s ease, background .5s;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; gap:10px;">
+              <div>
+                <div class="mono" style="font-size:11px; color:var(--mut); letter-spacing:0.08em; margin-bottom:12px;">STREAMING · 2025</div>
+                <h3 class="serif" style="font-size:32px;">Movie / TV Platform</h3>
+              </div>
+              <span class="mono" style="font-size:11px; font-weight:500; color:var(--ink2); background:rgba(var(--neutral-rgb),0.15); border-radius:999px; padding:5px 11px; white-space:nowrap;">mobile-first</span>
+            </div>
+            <p style="font-size:15px; line-height:1.6; color:var(--ink2); margin-bottom:18px;">Full-stack streaming platform with TMDB integration, auth, and a content-delivery / ad-management backend.</p>
+            <div style="display:flex; flex-wrap:wrap; gap:7px; margin-bottom:20px;">
+              <span class="tk-chip">React.js</span><span class="tk-chip">Node.js</span><span class="tk-chip">TMDB API</span><span class="tk-chip">PostgreSQL</span>
+            </div>
+            <div style="display:flex; gap:20px;"><a href="https://moviemx.pages.dev" target="_blank" rel="noopener" class="mono" style="font-size:13px; color:var(--accent);">Live ↗</a><a href="https://github.com/trakshan-mishra" target="_blank" rel="noopener" class="mono" style="font-size:13px; color:var(--mut);">GitHub ↗</a></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCROLL STORY -->
+    <section id="story" style="position:relative; height:190vh; margin:0;">
+      <div style="position:sticky; top:0; height:100vh; display:flex; flex-direction:column; justify-content:center; overflow:hidden;">
+        <canvas id="tk-story-canvas" style="position:absolute; inset:0; width:100%; height:100%;"></canvas>
+        <div style="position:relative; pointer-events:none; padding:0 8px;">
+          <div class="mono" style="font-size:11px; color:var(--accent); letter-spacing:0.14em; margin-bottom:18px;">HOW DIFFCONTEXT THINKS · KEEP SCROLLING</div>
+          <div style="display:grid; max-width:19ch;">
+            <h3 id="tk-story-c1" class="serif" style="grid-area:1/1; font-size:clamp(30px,4.6vw,54px); line-height:1.06; letter-spacing:-0.015em; transition:opacity .4s ease;">An agent's context window is a <span class="it" style="color:var(--accent);">landfill.</span></h3>
+            <h3 id="tk-story-c2" class="serif" style="grid-area:1/1; font-size:clamp(30px,4.6vw,54px); line-height:1.06; letter-spacing:-0.015em; opacity:0; transition:opacity .4s ease;">Trace what the interpreter <span class="it" style="color:var(--accent);">actually runs.</span></h3>
+            <h3 id="tk-story-c3" class="serif" style="grid-area:1/1; font-size:clamp(30px,4.6vw,54px); line-height:1.06; letter-spacing:-0.015em; opacity:0; transition:opacity .4s ease;">Delete <span class="it" style="color:var(--accent);">everything else.</span></h3>
+          </div>
+          <div style="display:flex; align-items:baseline; gap:14px; margin-top:26px;">
+            <span id="tk-story-tokens" class="serif" style="font-size:clamp(40px,6vw,72px); line-height:1; font-variant-numeric:tabular-nums;">35,270</span>
+            <span class="mono" style="font-size:13px; color:var(--mut);">prompt tokens</span>
+            <span id="tk-story-pct" class="mono" style="font-size:14px; color:var(--accent); opacity:0; transition:opacity .4s;">−69.5%</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- EXPERIENCE -->
+    <section id="experience" style="padding:110px 0 40px;">
+      <div data-reveal style="display:flex; align-items:baseline; gap:16px; margin-bottom:44px;">
+        <span class="mono" style="font-size:12px; color:var(--accent); letter-spacing:0.1em;">02</span>
+        <h2 class="serif" style="font-size:clamp(32px,5vw,44px);">Experience</h2>
+      </div>
+      <div style="position:relative; padding-left:30px; border-left:1px solid var(--border);">
+        <div data-reveal style="position:relative; padding-bottom:44px;">
+          <span style="position:absolute; left:-36px; top:6px; width:12px; height:12px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 5px var(--bg);"></span>
+          <div style="display:flex; flex-wrap:wrap; align-items:baseline; gap:10px; margin-bottom:10px;">
+            <h3 style="font-size:20px; font-weight:600;">Software Engineer</h3><span class="serif it" style="font-size:20px; color:var(--accent);">NextGen Invent</span>
+            <span class="mono" style="margin-left:auto; font-size:12px; color:var(--mut);">Sep 2024 — Mar 2025</span>
+          </div>
+          <ul style="list-style:none; display:flex; flex-direction:column; gap:8px;">
+            <li style="font-size:15px; color:var(--ink2); line-height:1.55; padding-left:18px; position:relative;"><span style="position:absolute; left:0; color:var(--accent);">›</span>Shipped production full-stack apps (React.js, Django REST, FastAPI); improved API response times <strong style="color:var(--ink);">35%</strong>.</li>
+            <li style="font-size:15px; color:var(--ink2); line-height:1.55; padding-left:18px; position:relative;"><span style="position:absolute; left:0; color:var(--accent);">›</span>Built accessible Tailwind UIs with OAuth-secured APIs across concurrent client projects.</li>
+            <li style="font-size:15px; color:var(--ink2); line-height:1.55; padding-left:18px; position:relative;"><span style="position:absolute; left:0; color:var(--accent);">›</span>Owned features end-to-end — schema design, REST endpoints, UI — across multiple client codebases in parallel.</li>
+          </ul>
+        </div>
+        <div data-reveal style="position:relative; padding-bottom:44px;">
+          <span style="position:absolute; left:-36px; top:6px; width:12px; height:12px; border-radius:50%; background:var(--bg); border:1.5px solid var(--mut2); box-shadow:0 0 0 5px var(--bg);"></span>
+          <div style="display:flex; flex-wrap:wrap; align-items:baseline; gap:10px; margin-bottom:10px;">
+            <h3 style="font-size:20px; font-weight:600;">AI Engineer Intern</h3><span class="serif it" style="font-size:20px; color:var(--accent);">Modern Monk Labs</span>
+            <span class="mono" style="margin-left:auto; font-size:12px; color:var(--mut);">Jun 2024 — Sep 2024</span>
+          </div>
+          <ul style="list-style:none; display:flex; flex-direction:column; gap:8px;">
+            <li style="font-size:15px; color:var(--ink2); line-height:1.55; padding-left:18px; position:relative;"><span style="position:absolute; left:0; color:var(--accent);">›</span>Built FastAPI inference endpoints handling <strong style="color:var(--ink);">150 concurrent req/s</strong>.</li>
+            <li style="font-size:15px; color:var(--ink2); line-height:1.55; padding-left:18px; position:relative;"><span style="position:absolute; left:0; color:var(--accent);">›</span>Integrated PostgreSQL pipelines for AI-output storage/monitoring; optimized model-serving latency.</li>
+            <li style="font-size:15px; color:var(--ink2); line-height:1.55; padding-left:18px; position:relative;"><span style="position:absolute; left:0; color:var(--accent);">›</span>Load-tested and profiled serving paths to keep p95 latency stable under concurrent inference traffic.</li>
+          </ul>
+        </div>
+        <div data-reveal style="position:relative;">
+          <span style="position:absolute; left:-36px; top:6px; width:12px; height:12px; border-radius:50%; background:var(--bg); border:1.5px solid var(--mut2); box-shadow:0 0 0 5px var(--bg);"></span>
+          <div style="display:flex; flex-wrap:wrap; align-items:baseline; gap:10px; margin-bottom:10px;">
+            <h3 style="font-size:20px; font-weight:600;">Generative AI Engineer Intern</h3><span class="serif it" style="font-size:20px; color:var(--accent);">VRARMR</span>
+            <span class="mono" style="margin-left:auto; font-size:12px; color:var(--mut);">Apr 2024 — Jun 2024</span>
+          </div>
+          <ul style="list-style:none; display:flex; flex-direction:column; gap:8px;">
+            <li style="font-size:15px; color:var(--ink2); line-height:1.55; padding-left:18px; position:relative;"><span style="position:absolute; left:0; color:var(--accent);">›</span>Built NL2SQL models; A/B tests improved multilingual transcription accuracy to <strong style="color:var(--ink);">76%</strong>.</li>
+            <li style="font-size:15px; color:var(--ink2); line-height:1.55; padding-left:18px; position:relative;"><span style="position:absolute; left:0; color:var(--accent);">›</span>Automated workflows with LangChain agentic pipelines.</li>
+            <li style="font-size:15px; color:var(--ink2); line-height:1.55; padding-left:18px; position:relative;"><span style="position:absolute; left:0; color:var(--accent);">›</span>Ran structured A/B evaluations across model variants to pick production candidates on accuracy-per-cost.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SKILLS -->
+    <section id="skills" style="padding:110px 0 40px;">
+      <div data-reveal style="display:flex; align-items:baseline; gap:16px; margin-bottom:44px;">
+        <span class="mono" style="font-size:12px; color:var(--accent); letter-spacing:0.1em;">03</span>
+        <h2 class="serif" style="font-size:clamp(32px,5vw,44px);">Toolkit</h2>
+      </div>
+      <div class="tk-grid2" style="display:grid; grid-template-columns:repeat(2,1fr); gap:40px 64px;">
+        <div data-reveal>
+          <div class="mono" style="font-size:12px; color:var(--mut); letter-spacing:0.04em; margin-bottom:16px;">LANGUAGES &amp; FRAMEWORKS</div>
+          <div style="display:flex; flex-wrap:wrap; gap:8px;"><span class="tk-chip">Python</span><span class="tk-chip">TypeScript</span><span class="tk-chip">JavaScript</span><span class="tk-chip">React.js</span><span class="tk-chip">Next.js</span><span class="tk-chip">Node.js</span><span class="tk-chip">FastAPI</span><span class="tk-chip">Django</span><span class="tk-chip">Django REST</span><span class="tk-chip">Tailwind</span></div>
+        </div>
+        <div data-reveal>
+          <div class="mono" style="font-size:12px; color:var(--mut); letter-spacing:0.04em; margin-bottom:16px;">AI · ML · GENAI</div>
+          <div style="display:flex; flex-wrap:wrap; gap:8px;"><span class="tk-chip">LangChain</span><span class="tk-chip">LangGraph</span><span class="tk-chip">Agentic AI</span><span class="tk-chip">RAG</span><span class="tk-chip">HF Transformers</span><span class="tk-chip">OpenAI APIs</span><span class="tk-chip">LLM Eval</span><span class="tk-chip">TensorFlow</span><span class="tk-chip">PyTorch</span><span class="tk-chip">NLP</span><span class="tk-chip">Computer Vision</span><span class="tk-chip">SAP AI Core</span></div>
+        </div>
+        <div data-reveal>
+          <div class="mono" style="font-size:12px; color:var(--mut); letter-spacing:0.04em; margin-bottom:16px;">DATA &amp; ANALYTICS</div>
+          <div style="display:flex; flex-wrap:wrap; gap:8px;"><span class="tk-chip">PostgreSQL</span><span class="tk-chip">SQL</span><span class="tk-chip">Data Pipelines</span><span class="tk-chip">Data Analysis</span><span class="tk-chip">REST APIs</span><span class="tk-chip">Real-Time Market APIs</span><span class="tk-chip">OCR</span></div>
+        </div>
+        <div data-reveal>
+          <div class="mono" style="font-size:12px; color:var(--mut); letter-spacing:0.04em; margin-bottom:16px;">INFRASTRUCTURE &amp; TOOLS</div>
+          <div style="display:flex; flex-wrap:wrap; gap:8px;"><span class="tk-chip">Docker</span><span class="tk-chip">Git</span><span class="tk-chip">OAuth</span><span class="tk-chip">CI/CD</span><span class="tk-chip">Cloud Deployment</span></div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ABOUT -->
+    <section id="about" style="padding:110px 0 40px;">
+      <div data-reveal style="display:flex; align-items:baseline; gap:16px; margin-bottom:44px;">
+        <span class="mono" style="font-size:12px; color:var(--accent); letter-spacing:0.1em;">04</span>
+        <h2 class="serif" style="font-size:clamp(32px,5vw,44px);">About</h2>
+      </div>
+      <div class="tk-grid2" style="display:grid; grid-template-columns:1fr; gap:56px; align-items:start;">
+        <div data-reveal>
+          <p class="serif" style="font-size:clamp(24px,3.4vw,34px); line-height:1.28; letter-spacing:-0.005em; text-wrap:pretty;">I care about <span class="it" style="color:var(--accent);">resource-efficient AI</span> — production systems that do more with less: AST-based context selection, token pruning, and agentic pipelines that hold up under real budget and latency constraints.</p>
+          <p style="font-size:17px; line-height:1.7; color:var(--ink2); margin-top:26px; max-width:62ch;">I ship full-stack web apps with React, Django REST and FastAPI, and build Generative / Agentic AI systems with LangChain, LangGraph and RAG. Recent work includes SAP AI Core feedback workflows benchmarking Gemini, Mistral &amp; GPT in production, plus LangChain RAG-retrieval contributions and Gradio demos for text-to-image models.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTACT -->
+    <section id="contact" style="padding:110px 0 40px;">
+      <div data-reveal style="display:flex; align-items:baseline; gap:16px; margin-bottom:44px;">
+        <span class="mono" style="font-size:12px; color:var(--accent); letter-spacing:0.1em;">05</span>
+        <h2 class="serif" style="font-size:clamp(32px,5vw,44px);">Let's talk</h2>
+      </div>
+      <div class="tk-grid2" style="display:grid; grid-template-columns:1fr 1fr; gap:56px; align-items:start;">
+        <div data-reveal>
+          <h3 class="serif" style="font-size:clamp(36px,5vw,52px); line-height:1.02; letter-spacing:-0.01em; margin-bottom:24px;">Let's build something <span class="it" style="color:var(--accent);">efficient.</span></h3>
+          <div class="mono" style="display:flex; flex-direction:column; gap:14px; font-size:14px;">
+            <a href="mailto:trakshanmishra477@gmail.com" style="color:var(--ink2);">→ trakshanmishra477@gmail.com</a>
+            <a href="https://www.linkedin.com/in/trakshan-mishra-100b08206/" target="_blank" rel="noopener" style="color:var(--ink2);">→ LinkedIn</a>
+            <a href="https://github.com/trakshan-mishra" target="_blank" rel="noopener" style="color:var(--ink2);">→ GitHub</a>
+          </div>
+          <button style="margin-top:30px; display:inline-flex; align-items:center; gap:8px; height:48px; padding:0 22px; background:var(--accent); color:var(--accent-ink); border:none; border-radius:999px; font-family:inherit; font-weight:600; font-size:15px; cursor:pointer;">Download résumé <span class="mono">↓</span></button>
+        </div>
+        <form data-reveal onsubmit="{{ onContactSubmit }}" style="background:var(--surface); backdrop-filter:var(--glass); border:1px solid var(--border); border-radius:20px; padding:26px; display:flex; flex-direction:column; gap:14px;">
+          <input type="text" placeholder="Name" required class="tk-input">
+          <input type="email" placeholder="Email" required class="tk-input">
+          <textarea placeholder="Message" rows="4" required class="tk-input" style="resize:vertical;"></textarea>
+          <button type="submit" style="height:48px; background:var(--pill); border:none; border-radius:12px; color:var(--pill-ink); font-family:inherit; font-weight:500; font-size:15px; cursor:pointer;">Send message</button>
+          <div class="mono" style="font-size:10.5px; color:var(--mut2);">opens your email app with the message pre-filled</div>
+        </form>
+      </div>
+
+      <div data-reveal style="margin-top:60px; background:var(--term); border-radius:16px; overflow:hidden; box-shadow:0 20px 50px var(--shadow);">
+        <div style="display:flex; align-items:center; gap:7px; padding:12px 16px; border-bottom:1px solid var(--term-line);">
+          <span style="width:11px; height:11px; border-radius:50%; background:var(--accent);"></span><span style="width:11px; height:11px; border-radius:50%; background:#4A4238;"></span><span style="width:11px; height:11px; border-radius:50%; background:#4A4238;"></span>
+          <span class="mono" style="margin-left:8px; font-size:11px; color:#8A8272;">try: whoami · contact · sudo hire</span>
+        </div>
+        <div id="tk-term-body" class="mono" style="padding:18px; font-size:13px; line-height:1.7; color:#D8CFBC; min-height:96px;"><div style="color:#8A8272;">Last login — portfolio session. Type a command.</div></div>
+        <div class="mono" style="display:flex; align-items:center; gap:8px; padding:0 18px 18px; font-size:13px;">
+          <span style="color:var(--accent); white-space:nowrap;">trakshan@portfolio:~$</span>
+          <input id="tk-term-input" type="text" autocomplete="off" spellcheck="false" style="flex:1; background:transparent; border:none; outline:none; color:#F0EBE0; font-family:inherit; font-size:13px;">
+          <span style="display:inline-block; width:8px; height:15px; background:var(--accent); animation:tk-blink 1.1s step-end infinite;"></span>
+        </div>
+      </div>
+
+      <div class="mono" style="margin-top:56px; padding-top:24px; border-top:1px solid var(--border); display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px; font-size:12px; color:var(--mut);">
+        <span>© 2026 Trakshan Mishra · Noida, IN</span>
+        <span>Built with restraint. <span style="color:var(--accent);">More signal, fewer tokens.</span></span>
+      </div>
+    </section>
+  </div>
+
+  <!-- DIFFCONTEXT DEMO MODAL -->
+  <div id="tk-demo-overlay" style="position:fixed; inset:0; z-index:120; display:none; align-items:center; justify-content:center; padding:20px; background:rgba(15,10,6,0.55); backdrop-filter:blur(8px);">
+    <div style="width:1000px; max-width:100%; max-height:calc(100vh - 40px); background:var(--surface-solid); border:1px solid var(--border); border-radius:24px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 40px 100px rgba(0,0,0,0.4); animation:tk-pop .45s cubic-bezier(.2,.8,.2,1);">
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:18px 22px; border-bottom:1px solid var(--border);">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span style="width:9px; height:9px; border-radius:50%; background:var(--accent);"></span>
+          <div>
+            <div style="font-weight:600; font-size:15px;">DiffContext — live on <span class="mono" style="color:var(--accent);">psf/requests</span></div>
+            <div class="mono" style="font-size:10px; color:var(--mut);">real module graph · sys.settrace() walkthrough</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:14px;">
+          <div class="mono" style="text-align:right;">
+            <div style="font-size:10px; color:var(--mut);">PROMPT TOKENS</div>
+            <div id="tk-demo-tokens" style="font-size:20px; font-weight:500; color:var(--ink);">35,270</div>
+          </div>
+          <button id="tk-demo-close" style="width:32px; height:32px; background:var(--bg); border:1px solid var(--border); border-radius:9px; color:var(--ink2); cursor:pointer; font-size:16px;">×</button>
+        </div>
+      </div>
+      <div class="tk-demo-grid" style="display:grid; grid-template-columns:1fr 300px; flex:1; min-height:0;">
+        <div style="position:relative; min-height:380px; background:rgba(var(--neutral-rgb),0.08);">
+          <canvas id="tk-demo-canvas" style="position:absolute; inset:0; width:100%; height:100%;"></canvas>
+          <div id="tk-demo-caption" class="mono" style="position:absolute; bottom:14px; left:16px; right:16px; font-size:11.5px; color:var(--ink2); background:var(--surface); backdrop-filter:var(--glass); border:1px solid var(--border); border-radius:10px; padding:10px 13px; line-height:1.5;">The task: <b style="color:var(--ink);">fix a bug in Session.send()</b>. A naive agent stuffs the whole repo into context. Ask me to do better ›</div>
+        </div>
+        <div style="border-left:1px solid var(--border); padding:20px; display:flex; flex-direction:column; gap:10px; overflow-y:auto;">
+          <div class="mono" style="font-size:10px; color:var(--mut); letter-spacing:0.1em;">ASK DIFFCONTEXT</div>
+          <button class="tk-demo-q" data-q="prune" style="text-align:left;">▶ Prune this context</button>
+          <button class="tk-demo-q" data-q="trace" style="text-align:left;">How does the tracer work?</button>
+          <button class="tk-demo-q" data-q="numbers" style="text-align:left;">Show me the numbers</button>
+          <button class="tk-demo-q" data-q="reset" style="text-align:left;">↺ Reset the repo</button>
+          <div id="tk-demo-log" class="mono" style="margin-top:8px; font-size:11.5px; line-height:1.65; color:var(--ink2); display:flex; flex-direction:column; gap:10px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHAT DOCK -->
+  <button id="tk-chat-pill" style="position:fixed; bottom:26px; right:26px; z-index:70; display:flex; align-items:center; gap:10px; height:52px; padding:0 22px; background:var(--pill); color:var(--pill-ink); border:none; border-radius:999px; font-family:inherit; font-weight:600; font-size:14px; cursor:pointer; box-shadow:0 12px 34px var(--shadow);">
+    <span style="width:8px; height:8px; border-radius:50%; background:var(--accent);"></span> Ask Trakshan's AI
+  </button>
+  <div id="tk-chat-panel" style="position:fixed; bottom:26px; right:26px; z-index:71; width:392px; max-width:calc(100vw - 32px); height:530px; max-height:calc(100vh - 52px); background:var(--surface-solid); border:1px solid var(--border); border-radius:20px; box-shadow:0 30px 70px var(--shadow); display:none; flex-direction:column; overflow:hidden;">
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:18px; border-bottom:1px solid var(--border);">
+      <div style="display:flex; align-items:center; gap:11px;">
+        <span style="width:10px; height:10px; border-radius:50%; background:var(--accent);"></span>
+        <div><div style="font-weight:600; font-size:14px;">Trakshan's AI</div><div class="mono" style="font-size:10px; color:var(--mut);">trained on the résumé · demo</div></div>
+      </div>
+      <button id="tk-chat-close" style="width:30px; height:30px; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--ink2); cursor:pointer; font-size:16px;">×</button>
+    </div>
+    <div id="tk-chat-body" style="flex:1; overflow-y:auto; padding:18px; display:flex; flex-direction:column; gap:12px;">
+      <div style="align-self:flex-start; max-width:86%; background:var(--bg); border-radius:14px 14px 14px 4px; padding:12px 14px; font-size:13.5px; line-height:1.5; color:var(--ink2);">Hey — ask me anything about Trakshan's work. Try one:</div>
+      <div id="tk-chat-chips" style="display:flex; flex-wrap:wrap; gap:8px;">
+        <button class="tk-qchip">What's his strongest project?</button><button class="tk-qchip">Does he know RAG?</button><button class="tk-qchip">Is he production-ready?</button>
+      </div>
+    </div>
+    <div style="padding:15px; border-top:1px solid var(--border); display:flex; gap:8px;">
+      <input id="tk-chat-input" type="text" placeholder="Ask a question…" class="tk-input" style="flex:1; height:42px;">
+      <button id="tk-chat-send" style="width:46px; height:42px; background:var(--accent); color:var(--accent-ink); border:none; border-radius:11px; cursor:pointer; font-size:16px;">↑</button>
+    </div>
+  </div>
+
+  <!-- COMMAND PALETTE -->
+  <div id="tk-palette-overlay" style="position:fixed; inset:0; z-index:100; display:none; align-items:flex-start; justify-content:center; padding-top:14vh; background:rgba(20,15,9,0.35); backdrop-filter:blur(5px);">
+    <div style="width:560px; max-width:calc(100vw - 32px); background:var(--surface-solid); border:1px solid var(--border); border-radius:16px; overflow:hidden; box-shadow:0 40px 90px var(--shadow);">
+      <div style="display:flex; align-items:center; gap:12px; padding:17px 20px; border-bottom:1px solid var(--border);">
+        <span class="mono" style="color:var(--accent);">›</span>
+        <input id="tk-palette-input" type="text" placeholder="Jump to a section or type a command…" autocomplete="off" style="flex:1; background:transparent; border:none; outline:none; color:var(--ink); font-family:inherit; font-size:16px;">
+        <kbd class="mono" style="font-size:11px; background:var(--bg); border:1px solid var(--border); border-radius:4px; padding:2px 6px; color:var(--mut);">esc</kbd>
+      </div>
+      <div id="tk-palette-list" style="max-height:340px; overflow-y:auto; padding:8px;"></div>
+    </div>
+  </div>
+
+  <style>
+    .tk-chip { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--ink2); background:rgba(var(--neutral-rgb),0.12); border:1px solid var(--border); border-radius:999px; padding:6px 11px; transition:transform .18s ease, border-color .18s ease, color .18s ease, background .18s ease; }
+    .tk-chip:hover { transform:translateY(-2px); border-color:var(--accent); color:var(--accent); background:rgba(var(--accent-rgb),0.07); }
+    .tk-input { background:var(--bg); border:1px solid var(--border); border-radius:11px; padding:12px 14px; color:var(--ink); font-family:'Geist',sans-serif; font-size:14px; outline:none; transition:border-color .15s, background .5s; }
+    .tk-input:focus { border-color:var(--accent); }
+    .tk-input::placeholder { color:var(--mut); }
+    .tk-qchip { text-align:left; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--ink2); background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:9px 12px; cursor:pointer; transition:border-color .15s, color .15s; }
+    .tk-qchip:hover { border-color:var(--accent); color:var(--accent); }
+    .tk-prow { display:flex; align-items:center; gap:12px; padding:12px 13px; border-radius:11px; cursor:pointer; color:var(--ink2); font-size:14px; }
+    .tk-prow.active, .tk-prow:hover { background:var(--bg); color:var(--ink); }
+    .tk-prow .tk-pk { margin-left:auto; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--mut2); }
+    .tk-demo-q { font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--ink); background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:11px 13px; cursor:pointer; transition:border-color .15s, color .15s, transform .15s; }
+    .tk-demo-q:hover { border-color:var(--accent); color:var(--accent); transform:translateX(3px); }
+    @media (max-width: 920px) {
+      .tk-grid2 { grid-template-columns:1fr !important; }
+      .tk-demo-grid { grid-template-columns:1fr !important; }
+      .tk-demo-grid > div:first-child { min-height:300px !important; }
+      .tk-demo-grid > div:last-child { border-left:none !important; border-top:1px solid var(--border); }
+      header { min-height:auto !important; }
+      #tk-chat-panel { width:calc(100vw - 24px) !important; right:12px !important; bottom:12px !important; height:calc(100vh - 24px) !important; }
+    }
+    @media (max-width: 620px) {
+      .tk-navlink, .tk-navname { display:none !important; }
+      .tk-vline { display:none !important; }
+      section { padding-top:70px !important; }
+    }
+  </style>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      onContactSubmit: (e) => {
+        e.preventDefault();
+        const f = e.target;
+        const [name, email, msg] = [...f.querySelectorAll('.tk-input')].map(i => i.value);
+        location.href = 'mailto:trakshanmishra477@gmail.com?subject=' + encodeURIComponent('Portfolio contact — ' + name) + '&body=' + encodeURIComponent(msg + '\n\n— ' + name + ' (' + email + ')');
+        const b = f.querySelector('button[type=submit]');
+        if (b) { b.textContent = 'Opening your email app…'; b.style.background = 'var(--accent)'; b.style.color = 'var(--accent-ink)'; setTimeout(() => { b.textContent = 'Send message'; b.style.background = ''; b.style.color = ''; }, 2500); }
+      }
+    };
+  }
+
+  componentDidMount() {
+    this.reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!document.getElementById('tk-root')) return;
+    this._cleanup = [];
+    this.mouse = { x: innerWidth / 2, y: innerHeight / 2 };
+    this.initTheme();
+    this.initProgress();
+    this.initBackground();
+    this.initReveals();
+    this.initCounter();
+    this.initProjectHover();
+    this.initMagnetic();
+    this.initGraph();
+    this.initDemo();
+    this.initPalette();
+    this.initChat();
+    this.initTerminal();
+    this.initStory();
+    this.initWorld();
+  }
+  componentWillUnmount() {
+    (this._cleanup || []).forEach(f => { try { f(); } catch (e) {} });
+    [this._bgRaf, this._graphRaf, this._demoRaf].forEach(r => r && cancelAnimationFrame(r));
+  }
+  on(el, ev, fn, opts) { if (!el) return; el.addEventListener(ev, fn, opts); this._cleanup.push(() => el.removeEventListener(ev, fn, opts)); }
+
+  /* ---------- theme ---------- */
+  cssRGB(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '191,82,48'; }
+  initTheme() {
+    const saved = localStorage.getItem('tk-theme') || 'dark';
+    this.applyTheme(saved, true);
+    this.on(document.getElementById('tk-theme'), 'click', () => {
+      this.applyTheme(this.theme === 'dark' ? 'light' : 'dark');
+      this.blip(this.theme === 'dark' ? 440 : 560);
+    });
+  }
+  applyTheme(t, silent) {
+    this.theme = t;
+    document.documentElement.setAttribute('data-theme', t);
+    try { localStorage.setItem('tk-theme', t); } catch (e) {}
+    const btn = document.getElementById('tk-theme');
+    if (btn) { btn.textContent = t === 'dark' ? '☾' : '◐'; if (!silent && !this.reduced) { btn.style.transform = 'rotate(180deg)'; setTimeout(() => btn.style.transform = 'none', 300); } }
+    this.rgb = { a: this.cssRGB('--accent-rgb'), n: this.cssRGB('--neutral-rgb') };
+  }
+
+  initProgress() {
+    const bar = document.getElementById('tk-progress');
+    const upd = () => { const m = document.documentElement.scrollHeight - innerHeight; bar.style.width = (m > 0 ? (scrollY / m) * 100 : 0) + '%'; };
+    this.on(window, 'scroll', upd, { passive: true }); upd();
+  }
+
+  /* ---------- BACKGROUND SCENES ---------- */
+  initBackground() {
+    const cv = document.getElementById('tk-bg'); if (!cv) return;
+    const ctx = cv.getContext('2d'); let w, h, dpr;
+    const resize = () => { dpr = Math.min(devicePixelRatio || 1, 2); w = cv.clientWidth; h = cv.clientHeight; cv.width = w * dpr; cv.height = h * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); };
+    resize(); this.on(window, 'resize', resize);
+    this.on(window, 'mousemove', (e) => { this.mouse.x = e.clientX; this.mouse.y = e.clientY; });
+    this.scene = 'idle';
+    const weights = { idle: 1, diff: 0, trade: 0, movie: 0 };
+    const dust = Array.from({ length: 46 }, () => ({ x: Math.random(), y: Math.random(), r: 0.6 + Math.random() * 1.8, s: 0.1 + Math.random() * 0.3, ph: Math.random() * 6.28 }));
+    const dn = Array.from({ length: 30 }, () => ({ x: Math.random(), y: Math.random(), vx: (Math.random() - .5) * .0006, vy: (Math.random() - .5) * .0006, r: 2 + Math.random() * 3, hot: Math.random() < .34 }));
+    let series = Array.from({ length: 120 }, (_, i) => 0.5 + Math.sin(i * 0.12) * 0.12);
+    const tiles = Array.from({ length: 26 }, () => ({ x: Math.random(), y: Math.random(), w: 60 + Math.random() * 40, s: 0.15 + Math.random() * 0.35 }));
+    let t = 0, last = performance.now();
+    const draw = (now) => {
+      const dt = Math.min(50, now - last); last = now; t += dt;
+      const A = this.rgb.a, N = this.rgb.n;
+      ['idle', 'diff', 'trade', 'movie'].forEach(k => { weights[k] += ((this.scene === k ? 1 : 0) - weights[k]) * 0.06; });
+      ctx.clearRect(0, 0, w, h);
+      if (weights.idle > 0.01) {
+        const a = weights.idle;
+        dust.forEach(p => { const px = p.x * w, py = (p.y * h + t * 0.006 * p.s * 60) % h; const fl = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(t * 0.001 + p.ph)); ctx.beginPath(); ctx.arc(px, py, p.r, 0, 6.29); ctx.fillStyle = `rgba(${A},${0.12 * fl * a})`; ctx.fill(); });
+        ctx.beginPath(); ctx.arc(this.mouse.x, this.mouse.y, 120 + 20 * Math.sin(t * 0.002), 0, 6.29); ctx.strokeStyle = `rgba(${A},${0.06 * a})`; ctx.lineWidth = 1; ctx.stroke();
+      }
+      if (weights.diff > 0.01) {
+        const a = weights.diff;
+        dn.forEach(p => { if (this.reduced) return; p.x += p.vx; p.y += p.vy; if (p.x < 0 || p.x > 1) p.vx *= -1; if (p.y < 0 || p.y > 1) p.vy *= -1; });
+        for (let i = 0; i < dn.length; i++) for (let j = i + 1; j < dn.length; j++) { const P = dn[i], Q = dn[j]; const dx = (P.x - Q.x) * w, dy = (P.y - Q.y) * h; const d = Math.hypot(dx, dy); if (d < 150) { ctx.beginPath(); ctx.moveTo(P.x * w, P.y * h); ctx.lineTo(Q.x * w, Q.y * h); ctx.strokeStyle = `rgba(${A},${(1 - d / 150) * 0.16 * a})`; ctx.lineWidth = 1; ctx.stroke(); } }
+        dn.forEach(p => { ctx.beginPath(); ctx.arc(p.x * w, p.y * h, p.r, 0, 6.29); ctx.fillStyle = p.hot ? `rgba(${A},${0.55 * a})` : `rgba(${N},${0.4 * a})`; ctx.fill(); });
+      }
+      if (weights.trade > 0.01) {
+        const a = weights.trade;
+        if (!this.reduced && t % 2 < 1) { series.push(series[series.length - 1] + (Math.random() - 0.48) * 0.05); series.shift(); series = series.map(v => Math.max(0.15, Math.min(0.85, v))); }
+        const base = h * 0.62, step = w / (series.length - 1);
+        ctx.beginPath(); series.forEach((v, i) => { const x = i * step, y = base - (v - 0.5) * h * 0.5; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+        ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath();
+        const g = ctx.createLinearGradient(0, base - h * 0.3, 0, h); g.addColorStop(0, `rgba(${A},${0.10 * a})`); g.addColorStop(1, `rgba(${A},0)`); ctx.fillStyle = g; ctx.fill();
+        ctx.beginPath(); series.forEach((v, i) => { const x = i * step, y = base - (v - 0.5) * h * 0.5; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+        ctx.strokeStyle = `rgba(${A},${0.4 * a})`; ctx.lineWidth = 2; ctx.stroke();
+        for (let i = 6; i < series.length; i += 10) { const x = i * step, y = base - (series[i] - 0.5) * h * 0.5; const hg = 14 + (i % 5) * 5; ctx.fillStyle = `rgba(${A},${0.18 * a})`; ctx.fillRect(x - 3, y - hg / 2, 6, hg); }
+      }
+      if (weights.movie > 0.01) {
+        const a = weights.movie;
+        tiles.forEach(p => { const py = p.y * h - t * 0.01 * p.s * 60; const yy = ((py % (h + 120)) + (h + 120)) % (h + 120) - 60; const x = p.x * w; ctx.fillStyle = `rgba(${A},${0.07 * a})`; this.rr(ctx, x, yy, p.w, p.w * 1.4, 10); ctx.fill(); ctx.strokeStyle = `rgba(${A},${0.12 * a})`; ctx.lineWidth = 1; ctx.stroke(); });
+      }
+      this._bgRaf = requestAnimationFrame(draw);
+    };
+    this._bgRaf = requestAnimationFrame(draw);
+    this.setScene = (s) => {
+      this.scene = s;
+      const lab = document.getElementById('tk-scene-label');
+      const txt = { diff: 'DEPENDENCY GRAPH · CONTEXT PRUNING', trade: 'REAL-TIME MARKET DATA', movie: 'CONTENT LIBRARY · STREAMING' };
+      if (lab) { if (s === 'idle') lab.style.opacity = '0'; else { lab.textContent = txt[s] || ''; lab.style.opacity = '1'; } }
+    };
+  }
+  rr(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+
+  initProjectHover() {
+    document.querySelectorAll('.tk-proj').forEach(card => {
+      const scene = card.dataset.scene;
+      this.on(card, 'mouseenter', () => { if (this.setScene) this.setScene(scene); if (!this.reduced) card.style.transform = 'translateY(-6px) scale(1.006)'; card.style.boxShadow = `0 24px 60px rgba(${this.rgb.a},0.14)`; card.style.borderColor = 'var(--border-hot)'; this.blip(660); });
+      this.on(card, 'mouseleave', () => { if (this.setScene) this.setScene('idle'); card.style.transform = 'none'; card.style.boxShadow = 'none'; card.style.borderColor = 'var(--border)'; });
+    });
+    const diff = document.getElementById('tk-card-diff');
+    this.on(diff, 'click', (e) => { if (e.target.closest('a, button, canvas')) return; this.openDemo(); });
+    this.on(diff, 'keydown', (e) => { if (e.key === 'Enter') this.openDemo(); });
+  }
+
+  initReveals() {
+    const els = Array.from(document.querySelectorAll('[data-reveal]'));
+    if (this.reduced || !('IntersectionObserver' in window)) return;
+    els.forEach(el => { el.style.opacity = '0'; el.style.transform = 'translateY(16px)'; el.style.transition = 'opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1)'; });
+    const io = new IntersectionObserver((ents) => { ents.forEach(en => { if (en.isIntersecting) { const el = en.target; setTimeout(() => { el.style.opacity = '1'; el.style.transform = 'none'; }, (el.dataset.d || 0) * 1); io.unobserve(el); } }); }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+    els.forEach((el, i) => { el.dataset.d = (i % 4) * 80; io.observe(el); });
+    this._cleanup.push(() => io.disconnect());
+  }
+
+  initCounter() {
+    const el = document.getElementById('tk-counter'); if (!el) return;
+    const from = 35270, to = 10747, fmt = n => Math.round(n).toLocaleString('en-US');
+    if (this.reduced) { el.textContent = fmt(to); return; }
+    el.textContent = fmt(from);
+    const io = new IntersectionObserver(e => { if (e[0].isIntersecting) { io.disconnect(); const d = 1700, t0 = performance.now(); const step = t => { const p = Math.min(1, (t - t0) / d); el.textContent = fmt(from + (to - from) * (1 - Math.pow(1 - p, 3))); if (p < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); } }, { threshold: 0.6 });
+    io.observe(el); this._cleanup.push(() => io.disconnect());
+  }
+
+  initMagnetic() {
+    ['tk-cta-ai', 'tk-cta-demo'].forEach(id => {
+      const btn = document.getElementById(id); if (!btn) return;
+      if (!this.reduced) {
+        btn.style.transition = (btn.style.transition ? btn.style.transition + ', ' : '') + 'transform .25s cubic-bezier(.2,.8,.2,1)';
+        this.on(btn, 'mousemove', e => { const r = btn.getBoundingClientRect(); btn.style.transform = `translate(${(e.clientX - r.left - r.width / 2) * 0.3}px, ${(e.clientY - r.top - r.height / 2) * 0.4}px)`; });
+        this.on(btn, 'mouseleave', () => { btn.style.transform = 'translate(0,0)'; });
+      }
+    });
+    this.on(document.getElementById('tk-cta-ai'), 'click', () => this.openChat());
+    this.on(document.getElementById('tk-cta-demo'), 'click', () => this.openDemo());
+  }
+
+  /* ---------- small graph (card) ---------- */
+  initGraph() {
+    const cv = document.getElementById('tk-graph'); if (!cv) return;
+    const ctx = cv.getContext('2d'); let w, h, dpr;
+    const resize = () => { dpr = Math.min(devicePixelRatio || 1, 2); w = cv.clientWidth; h = cv.clientHeight; cv.width = w * dpr; cv.height = h * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); };
+    const N = 24, nodes = [];
+    for (let i = 0; i < N; i++) nodes.push({ x: 0, y: 0, vx: 0, vy: 0, r: i < 3 ? 6.5 : 3 + Math.random() * 2.5, retained: i % 10 < 3, alpha: 1 });
+    nodes[0].retained = nodes[1].retained = nodes[2].retained = true;
+    const edges = []; for (let i = 1; i < N; i++) { edges.push([i, Math.floor(Math.random() * i)]); if (Math.random() < 0.3 && i > 3) edges.push([i, Math.floor(Math.random() * i)]); }
+    let inited = false;
+    const initPos = () => { nodes.forEach(n => { n.x = 30 + Math.random() * (w - 60); n.y = 40 + Math.random() * (h - 70); }); inited = true; };
+    resize(); initPos(); this.on(window, 'resize', resize);
+    this.pruned = false; let drag = null;
+    const at = (px, py) => nodes.find(n => Math.hypot(n.x - px, n.y - py) < n.r + 6);
+    const pos = e => { const r = cv.getBoundingClientRect(); const p = e.touches ? e.touches[0] : e; return [p.clientX - r.left, p.clientY - r.top]; };
+    this.on(cv, 'mousedown', e => { const [x, y] = pos(e); drag = at(x, y); if (drag) cv.style.cursor = 'grabbing'; });
+    this.on(window, 'mousemove', e => { if (drag) { const [x, y] = pos(e); drag.x = x; drag.y = y; drag.vx = drag.vy = 0; } });
+    this.on(window, 'mouseup', () => { drag = null; cv.style.cursor = 'grab'; });
+    this.on(cv, 'touchstart', e => { const [x, y] = pos(e); drag = at(x, y); if (drag) e.preventDefault(); }, { passive: false });
+    this.on(cv, 'touchmove', e => { if (drag) { const [x, y] = pos(e); drag.x = x; drag.y = y; e.preventDefault(); } }, { passive: false });
+    this.on(cv, 'touchend', () => { drag = null; });
+    const btn = document.getElementById('tk-prune'), dot = document.getElementById('tk-prune-dot'), lab = document.getElementById('tk-prune-label'), nc = document.getElementById('tk-graph-nodes');
+    this.on(btn, 'click', () => { this.pruned = !this.pruned; if (dot) dot.style.background = this.pruned ? 'var(--accent)' : 'var(--mut2)'; if (lab) lab.textContent = this.pruned ? 'context pruned' : 'prune context'; if (btn) btn.style.borderColor = this.pruned ? 'var(--border-hot)' : 'var(--border)'; if (nc) nc.textContent = this.pruned ? '78' : '249'; this.blip(520); });
+    const tick = () => {
+      if (!inited || w === 0) { this._graphRaf = requestAnimationFrame(tick); return; }
+      const A = this.rgb.a, NC = this.rgb.n;
+      if (!this.reduced) {
+        for (let i = 0; i < N; i++) { const a = nodes[i];
+          for (let j = i + 1; j < N; j++) { const b = nodes[j]; let dx = a.x - b.x, dy = a.y - b.y, d = Math.hypot(dx, dy) || 1; const rep = 340 / (d * d); dx /= d; dy /= d; a.vx += dx * rep; a.vy += dy * rep; b.vx -= dx * rep; b.vy -= dy * rep; }
+          a.vx += (w / 2 - a.x) * 0.0013; a.vy += (h / 2 - a.y) * 0.0013;
+        }
+        edges.forEach(([i, j]) => { const a = nodes[i], b = nodes[j]; let dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1; const f = (d - 58) * 0.02; dx /= d; dy /= d; a.vx += dx * f; a.vy += dy * f; b.vx -= dx * f; b.vy -= dy * f; });
+        nodes.forEach(n => { if (n === drag) return; n.vx *= 0.8; n.vy *= 0.8; n.x += n.vx; n.y += n.vy; n.x = Math.max(12, Math.min(w - 12, n.x)); n.y = Math.max(16, Math.min(h - 34, n.y)); });
+      }
+      nodes.forEach(n => { const tg = (this.pruned && !n.retained) ? 0.07 : 1; n.alpha += (tg - n.alpha) * 0.12; });
+      ctx.clearRect(0, 0, w, h);
+      edges.forEach(([i, j]) => { const a = nodes[i], b = nodes[j], both = a.retained && b.retained, al = Math.min(a.alpha, b.alpha); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.strokeStyle = both ? `rgba(${A},${0.5 * al})` : `rgba(${NC},${0.4 * al})`; ctx.lineWidth = both ? 1.4 : 0.8; ctx.stroke(); });
+      nodes.forEach(n => { ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, 6.29); if (n.retained) { ctx.fillStyle = `rgba(${A},${n.alpha})`; ctx.shadowColor = `rgba(${A},0.6)`; ctx.shadowBlur = 8 * n.alpha; } else { ctx.fillStyle = `rgba(${NC},${n.alpha})`; ctx.shadowBlur = 0; } ctx.fill(); ctx.shadowBlur = 0; });
+      this._graphRaf = requestAnimationFrame(tick);
+    };
+    tick();
+  }
+
+  /* ---------- DIFFCONTEXT DEMO (real requests repo) ---------- */
+  initDemo() {
+    const overlay = document.getElementById('tk-demo-overlay');
+    const cv = document.getElementById('tk-demo-canvas');
+    if (!overlay || !cv) return;
+    const ctx = cv.getContext('2d');
+    let w = 0, h = 0, dpr;
+    const resize = () => { dpr = Math.min(devicePixelRatio || 1, 2); w = cv.clientWidth; h = cv.clientHeight; cv.width = w * dpr; cv.height = h * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); };
+    this.on(window, 'resize', () => { if (overlay.style.display === 'flex') resize(); });
+
+    // real requests/ modules + real-ish import edges
+    const files = ['api.py','sessions.py','adapters.py','models.py','cookies.py','auth.py','hooks.py','utils.py','exceptions.py','structures.py','status_codes.py','compat.py','_internal_utils.py','certs.py','packages.py','help.py'];
+    const E = [['api.py','sessions.py'],['api.py','models.py'],['sessions.py','adapters.py'],['sessions.py','models.py'],['sessions.py','cookies.py'],['sessions.py','hooks.py'],['sessions.py','auth.py'],['sessions.py','utils.py'],['sessions.py','exceptions.py'],['sessions.py','structures.py'],['adapters.py','models.py'],['adapters.py','utils.py'],['adapters.py','exceptions.py'],['models.py','cookies.py'],['models.py','structures.py'],['models.py','hooks.py'],['models.py','exceptions.py'],['models.py','compat.py'],['models.py','_internal_utils.py'],['cookies.py','_internal_utils.py'],['auth.py','_internal_utils.py'],['utils.py','compat.py'],['utils.py','certs.py'],['status_codes.py','structures.py'],['help.py','packages.py']];
+    // execution path of Session.send() (traced)
+    const tracePath = ['api.py','sessions.py','adapters.py','models.py','cookies.py','hooks.py','exceptions.py'];
+    const retained = new Set(tracePath.concat(['utils.py']));
+    const idx = Object.fromEntries(files.map((f, i) => [f, i]));
+    const nodes = files.map((f, i) => ({ f, x: 0, y: 0, alpha: 1, glow: 0, r: tracePath.includes(f) ? 7 : 5 }));
+    const layout = () => {
+      // sessions.py center; others radial
+      const cx = w / 2, cy = h / 2 - 10, R = Math.min(w, h) * 0.36;
+      nodes.forEach((n, i) => {
+        if (n.f === 'sessions.py') { n.x = cx; n.y = cy; return; }
+        const k = i < idx['sessions.py'] ? i : i - 1;
+        const ang = (k / (files.length - 1)) * Math.PI * 2 - Math.PI / 2;
+        n.x = cx + Math.cos(ang) * R; n.y = cy + Math.sin(ang) * R;
+      });
+    };
+    let phase = 'idle'; // idle | tracing | pruning | pruned
+    let pulse = { seg: 0, t: 0 }; // pulse along tracePath
+    let tokenAnim = null;
+    const tokenEl = document.getElementById('tk-demo-tokens');
+    const caption = document.getElementById('tk-demo-caption');
+    const log = document.getElementById('tk-demo-log');
+    const say = (html, accent) => { const d = document.createElement('div'); d.style.cssText = `padding:9px 11px;border-radius:9px;background:var(--bg);border:1px solid ${accent ? 'var(--border-hot)' : 'var(--border)'};${accent ? 'color:var(--accent);' : ''}`; d.innerHTML = html; log.appendChild(d); log.parentElement.scrollTop = log.parentElement.scrollHeight; };
+    const setCaption = (html) => { if (caption) caption.innerHTML = html; };
+    const setTokens = (from, to, dur) => {
+      if (this.reduced || !dur) { tokenEl.textContent = to.toLocaleString('en-US'); return; }
+      const t0 = performance.now();
+      tokenAnim = () => { const p = Math.min(1, (performance.now() - t0) / dur); tokenEl.textContent = Math.round(from + (to - from) * (1 - Math.pow(1 - p, 3))).toLocaleString('en-US'); if (p < 1) requestAnimationFrame(tokenAnim); };
+      requestAnimationFrame(tokenAnim);
+    };
+
+    const reset = () => {
+      phase = 'idle'; pulse = { seg: 0, t: 0 };
+      nodes.forEach(n => { n.alpha = 1; n.glow = 0; });
+      setTokens(0, 35270, 0);
+      setCaption(`The task: <b style="color:var(--ink)">fix a bug in Session.send()</b>. A naive agent stuffs the whole repo into context. Ask me to do better ›`);
+    };
+
+    this.openDemo = () => { overlay.style.display = 'flex'; resize(); layout(); reset(); log.innerHTML = ''; say('DiffContext loaded <b>psf/requests</b> — 16 top-level modules shown, 249 graph nodes indexed.'); this.blip(700); if (!this._demoRaf) tick(); };
+    const close = () => { overlay.style.display = 'none'; };
+    this.on(document.getElementById('tk-demo-close'), 'click', close);
+    this.on(overlay, 'click', e => { if (e.target === overlay) close(); });
+    this.on(document, 'keydown', e => { if (e.key === 'Escape') close(); });
+
+    // questions
+    document.querySelectorAll('.tk-demo-q').forEach(b => this.on(b, 'click', () => {
+      const q = b.dataset.q; this.blip(600);
+      if (q === 'prune') {
+        if (phase === 'tracing' || phase === 'pruning') return;
+        reset(); phase = 'tracing'; pulse = { seg: 0, t: 0 };
+        say('▶ <b>prune this context</b>', true);
+        say('Step 1 — running <b>sys.settrace()</b> on the failing test. Watching every frame the interpreter actually enters…');
+        setCaption(`<b style="color:var(--accent)">tracing</b> — the orange pulse is the interpreter walking the real call path of <b>Session.send()</b>.`);
+      } else if (q === 'trace') {
+        say('The tracer hooks <b>sys.settrace()</b> during a test run. Every function frame the interpreter enters becomes a gold-standard node — no guessing, no embeddings. That execution graph is the ground truth retrieval methods get benchmarked against (BM25, semantic, naive graph expansion).');
+      } else if (q === 'numbers') {
+        say('On the requests benchmark: <b style="color:var(--accent)">35,270 → 10,747 tokens (-69.5%)</b> at <b>79.6% precision</b>. Graph: 249 nodes, 181 edges. Fewer tokens in = cheaper, faster, less distraction for the model.');
+      } else if (q === 'reset') { reset(); say('↺ repo restored — 35,270 tokens back in context.'); }
+    }));
+
+    const nodeByF = f => nodes[idx[f]];
+    const tick = () => {
+      if (overlay.style.display !== 'flex') { this._demoRaf = requestAnimationFrame(tick); return; }
+      if (w === 0) resize();
+      const A = this.rgb.a, N = this.rgb.n;
+      // pulse progression
+      if (phase === 'tracing' && !this.reduced) {
+        pulse.t += 0.02;
+        if (pulse.t >= 1) {
+          pulse.t = 0; nodeByF(tracePath[pulse.seg + 1] || tracePath[pulse.seg]).glow = 1;
+          pulse.seg++;
+          if (pulse.seg >= tracePath.length - 1) {
+            phase = 'pruning';
+            say('Step 2 — execution graph captured. Pruning everything the trace never touched…');
+            setCaption(`<b style="color:var(--accent)">pruning</b> — modules outside the traced path fade out of the prompt.`);
+            setTimeout(() => { phase = 'pruned'; setTokens(35270, 10747, 1600); say(`Done. <b style="color:var(--accent)">-69.5% tokens</b>, task context intact. That's the pitch.`); setCaption(`<b style="color:var(--accent)">pruned</b> — 8 of 16 modules retained. Same task, one-third the tokens.`); this.blip(880); }, 900);
+          }
+        }
+        nodeByF(tracePath[0]).glow = 1;
+      }
+      if (phase === 'tracing' && this.reduced) { phase = 'pruned'; tracePath.forEach(f => nodeByF(f).glow = 1); setTokens(0, 10747, 0); }
+      nodes.forEach(n => {
+        const target = (phase === 'pruning' || phase === 'pruned') && !retained.has(n.f) ? 0.08 : 1;
+        n.alpha += (target - n.alpha) * 0.1;
+        n.glow *= 0.995;
+      });
+      ctx.clearRect(0, 0, w, h);
+      // edges
+      E.forEach(([a, b]) => {
+        const P = nodeByF(a), Q = nodeByF(b);
+        const hot = tracePath.includes(a) && tracePath.includes(b);
+        const al = Math.min(P.alpha, Q.alpha);
+        ctx.beginPath(); ctx.moveTo(P.x, P.y); ctx.lineTo(Q.x, Q.y);
+        ctx.strokeStyle = hot && (phase !== 'idle') ? `rgba(${A},${0.55 * al})` : `rgba(${N},${0.3 * al})`;
+        ctx.lineWidth = hot && phase !== 'idle' ? 1.6 : 0.8; ctx.stroke();
+      });
+      // pulse dot
+      if (phase === 'tracing' && pulse.seg < tracePath.length - 1) {
+        const P = nodeByF(tracePath[pulse.seg]), Q = nodeByF(tracePath[pulse.seg + 1]);
+        const px = P.x + (Q.x - P.x) * pulse.t, py = P.y + (Q.y - P.y) * pulse.t;
+        ctx.beginPath(); ctx.arc(px, py, 5, 0, 6.29); ctx.fillStyle = `rgba(${A},1)`; ctx.shadowColor = `rgba(${A},0.9)`; ctx.shadowBlur = 14; ctx.fill(); ctx.shadowBlur = 0;
+      }
+      // nodes + labels
+      ctx.font = '10.5px JetBrains Mono, monospace'; ctx.textAlign = 'center';
+      nodes.forEach(n => {
+        const hot = n.glow > 0.05 || (phase !== 'idle' && tracePath.includes(n.f) && phase !== 'tracing');
+        ctx.beginPath(); ctx.arc(n.x, n.y, n.r + n.glow * 2, 0, 6.29);
+        if (hot) { ctx.fillStyle = `rgba(${A},${n.alpha})`; ctx.shadowColor = `rgba(${A},0.7)`; ctx.shadowBlur = 10; }
+        else { ctx.fillStyle = `rgba(${N},${0.75 * n.alpha})`; ctx.shadowBlur = 0; }
+        ctx.fill(); ctx.shadowBlur = 0;
+        ctx.fillStyle = hot ? `rgba(${A},${n.alpha})` : `rgba(${N},${0.9 * n.alpha})`;
+        ctx.fillText(n.f, n.x, n.y - n.r - 7);
+      });
+      this._demoRaf = requestAnimationFrame(tick);
+    };
+    tick();
+  }
+
+  /* ---------- palette ---------- */
+  initPalette() {
+    const overlay = document.getElementById('tk-palette-overlay'), input = document.getElementById('tk-palette-input'), list = document.getElementById('tk-palette-list');
+    if (!overlay) return;
+    const items = [
+      { label: 'Play the DiffContext demo', kind: 'cmd', run: () => this.openDemo(), key: '▶' },
+      { label: 'Work', kind: 'nav', target: 'work', key: '01' },
+      { label: 'Experience', kind: 'nav', target: 'experience', key: '02' },
+      { label: 'Toolkit', kind: 'nav', target: 'skills', key: '03' },
+      { label: 'About', kind: 'nav', target: 'about', key: '04' },
+      { label: 'Contact', kind: 'nav', target: 'contact', key: '05' },
+      { label: 'Ask Trakshan\u2019s AI', kind: 'cmd', run: () => this.openChat(), key: 'chat' },
+      { label: 'Toggle dark mode', kind: 'cmd', run: () => this.applyTheme(this.theme === 'dark' ? 'light' : 'dark'), key: '◐' },
+      { label: 'Open GitHub', kind: 'cmd', run: () => window.open('https://github.com/trakshan-mishra', '_blank'), key: '↗' },
+      { label: 'Email Trakshan', kind: 'cmd', run: () => { location.href = 'mailto:trakshanmishra477@gmail.com'; }, key: '↗' },
+      { label: 'sudo hire', kind: 'cmd', run: () => { this.scrollTo('contact'); this.runTerm('sudo hire'); }, key: '$' },
+    ];
+    let filtered = items.slice(), active = 0;
+    const render = () => { list.innerHTML = ''; filtered.forEach((it, i) => { const row = document.createElement('div'); row.className = 'tk-prow' + (i === active ? ' active' : ''); row.innerHTML = `<span class="mono" style="font-size:12px;color:${it.kind === 'nav' ? 'var(--accent)' : 'var(--mut2)'}">${it.kind === 'nav' ? '#' : '›'}</span><span>${it.label}</span><span class="tk-pk">${it.key}</span>`; row.addEventListener('mouseenter', () => { active = i; render(); }); row.addEventListener('click', () => this.exec(filtered[i])); list.appendChild(row); }); };
+    this.exec = it => { if (!it) return; this.closePal(); if (it.kind === 'nav') this.scrollTo(it.target); else it.run && it.run(); };
+    this.closePal = () => { overlay.style.display = 'none'; input.value = ''; };
+    this.openPal = () => { overlay.style.display = 'flex'; filtered = items.slice(); active = 0; render(); setTimeout(() => input.focus(), 20); };
+    this.scrollTo = id => { const el = document.getElementById(id); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + pageYOffset - 80, behavior: this.reduced ? 'auto' : 'smooth' }); };
+    this.on(document.getElementById('tk-open-palette'), 'click', () => this.openPal());
+    this.on(input, 'input', () => { const q = input.value.toLowerCase().trim(); filtered = items.filter(it => it.label.toLowerCase().includes(q) || it.key.includes(q)); active = 0; render(); });
+    this.on(input, 'keydown', e => { if (e.key === 'ArrowDown') { e.preventDefault(); active = Math.min(filtered.length - 1, active + 1); render(); } else if (e.key === 'ArrowUp') { e.preventDefault(); active = Math.max(0, active - 1); render(); } else if (e.key === 'Enter') { e.preventDefault(); this.exec(filtered[active]); } });
+    this.on(overlay, 'click', e => { if (e.target === overlay) this.closePal(); });
+    this.on(document, 'keydown', e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); overlay.style.display === 'flex' ? this.closePal() : this.openPal(); } else if (e.key === 'Escape') this.closePal(); });
+  }
+
+  /* ---------- chat ---------- */
+  openChat() { const p = document.getElementById('tk-chat-panel'), pill = document.getElementById('tk-chat-pill'); if (p) p.style.display = 'flex'; if (pill) pill.style.display = 'none'; setTimeout(() => { const i = document.getElementById('tk-chat-input'); if (i) i.focus(); }, 30); }
+  initChat() {
+    const panel = document.getElementById('tk-chat-panel'), pill = document.getElementById('tk-chat-pill'), body = document.getElementById('tk-chat-body'), input = document.getElementById('tk-chat-input');
+    if (!panel) return;
+    this.on(pill, 'click', () => this.openChat());
+    this.on(document.getElementById('tk-chat-close'), 'click', () => { panel.style.display = 'none'; pill.style.display = 'flex'; });
+    const ans = {
+      strongest: "DiffContext, easily. A repository-scale context engine that cut prompt tokens 35,270\u219210,747 (-69.5%) while holding 79.6% precision on the Requests benchmark \u2014 click the DiffContext card to watch it prune the repo live.",
+      rag: "Yes \u2014 hands-on with RAG, LangChain and LangGraph, including open-source LangChain modules for RAG retrieval and production agentic pipelines.",
+      prod: "Very. He shipped full-stack apps at NextGen Invent (API latency -35%) and built FastAPI inference endpoints handling 150 concurrent req/s at Modern Monk Labs.",
+      def: "Short version: full-stack + AI/ML engineer focused on resource-efficient, agentic systems. Ask about DiffContext, RAG, or his production experience."
+    };
+    const pick = q => { q = q.toLowerCase(); if (/strong|project|best/.test(q)) return ans.strongest; if (/rag|langchain|llm/.test(q)) return ans.rag; if (/prod|ready|ship|hire/.test(q)) return ans.prod; return ans.def; };
+    const addUser = t => { const d = document.createElement('div'); d.style.cssText = 'align-self:flex-end;max-width:86%;background:var(--accent);color:var(--accent-ink);border-radius:14px 14px 4px 14px;padding:12px 14px;font-size:13.5px;line-height:1.5;font-weight:500;'; d.textContent = t; body.appendChild(d); body.scrollTop = body.scrollHeight; };
+    const addBot = t => {
+      const typ = document.createElement('div'); typ.style.cssText = 'align-self:flex-start;background:var(--bg);border-radius:14px;padding:13px 15px;display:flex;gap:5px;';
+      typ.innerHTML = [0, 1, 2].map(i => `<span class="tk-anim" style="width:6px;height:6px;border-radius:50%;background:var(--mut2);display:inline-block;animation:tk-typing 1s ${i * .15}s infinite;"></span>`).join(''); body.appendChild(typ); body.scrollTop = body.scrollHeight;
+      setTimeout(() => {
+        typ.remove(); const d = document.createElement('div'); d.style.cssText = 'align-self:flex-start;max-width:86%;background:var(--bg);border-radius:14px 14px 14px 4px;padding:12px 14px;font-size:13.5px;line-height:1.55;color:var(--ink2);';
+        const st = document.createElement('div'); st.className = 'mono'; st.style.cssText = 'font-size:10px;color:var(--mut2);margin-top:6px;'; st.textContent = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        body.appendChild(d); let i = 0; const sp = this.reduced ? 999 : 14;
+        const type = () => { d.textContent = t.slice(0, i); if (i <= t.length) { i += 2; d.appendChild(st); setTimeout(type, sp); } body.scrollTop = body.scrollHeight; };
+        if (this.reduced) { d.textContent = t; d.appendChild(st); } else type();
+      }, 620);
+    };
+    const send = q => { if (!q.trim()) return; const c = document.getElementById('tk-chat-chips'); if (c) c.style.display = 'none'; addUser(q); addBot(pick(q)); this.blip(720); };
+    document.querySelectorAll('.tk-qchip').forEach(c => this.on(c, 'click', () => send(c.textContent)));
+    this.on(document.getElementById('tk-chat-send'), 'click', () => { send(input.value); input.value = ''; });
+    this.on(input, 'keydown', e => { if (e.key === 'Enter') { send(input.value); input.value = ''; } });
+  }
+
+  /* ---------- terminal ---------- */
+  runTerm(cmd) {
+    const body = document.getElementById('tk-term-body'); if (!body) return;
+    const line = document.createElement('div'); line.innerHTML = `<span style="color:var(--accent);">trakshan@portfolio:~$</span> <span style="color:#F0EBE0;">${cmd.replace(/</g,'&lt;')}</span>`; body.appendChild(line);
+    const out = document.createElement('div'); out.style.cssText = 'color:#B7AC97;white-space:pre-wrap;margin:2px 0 10px;';
+    const c = cmd.trim().toLowerCase();
+    const map = { whoami: 'trakshan mishra — full-stack & AI/ML engineer. builds resource-efficient agentic systems.', ls: 'diffcontext/  tradetrack-pro/  moviemx/  resume.pdf  contact.txt', help: 'available: whoami · ls · contact · skills · demo · theme · sudo hire · clear', contact: 'email: trakshanmishra477@gmail.com\ngithub: github.com/trakshan-mishra\nlinkedin: /in/trakshan-mishra-100b08206', skills: 'python · typescript · react · fastapi · django · langchain · langgraph · rag · postgres · docker', demo: '→ launching DiffContext demo…', theme: '→ toggling theme…', 'sudo hire': '[sudo] password: ********\n✓ access granted. excellent decision.\n→ opening contact channel…', sudo: 'permission is earned. try: sudo hire', clear: '__clear__' };
+    if (c === 'clear') { body.innerHTML = '<div style="color:#8A8272;">cleared.</div>'; return; }
+    let res = map[c]; if (res === undefined) res = `command not found: ${cmd}. try 'help'.`;
+    out.textContent = res; if (c === 'contact' || c === 'sudo hire') out.style.color = 'var(--border-hot)';
+    if (c === 'demo') setTimeout(() => this.openDemo(), 300);
+    if (c === 'theme') setTimeout(() => this.applyTheme(this.theme === 'dark' ? 'light' : 'dark'), 300);
+    if (c === 'sudo hire') setTimeout(() => this.scrollTo && this.scrollTo('contact'), 400);
+    body.appendChild(out); body.scrollTop = body.scrollHeight; this.blip(600);
+  }
+  initTerminal() { const i = document.getElementById('tk-term-input'); if (!i) return; this.on(i, 'keydown', e => { if (e.key === 'Enter' && i.value.trim()) { this.runTerm(i.value); i.value = ''; } }); }
+
+  blip() {}
+
+  /* ---------- ANIME OPEN WORLD ---------- */
+  initWorld() {
+    const cv = document.getElementById('tk-world'); if (!cv) return;
+    const wrap = document.getElementById('tk-world-wrap');
+    const mm = document.getElementById('tk-minimap');
+    const mmx = mm.getContext('2d');
+    const ctx = cv.getContext('2d');
+    let vw = 0, vh = 0, dpr;
+    const resize = () => { dpr = Math.min(devicePixelRatio || 1, 2); vw = cv.clientWidth; vh = cv.clientHeight; cv.width = vw * dpr; cv.height = vh * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); };
+    resize(); this.on(window, 'resize', resize);
+
+    const W = 2600, H = 1800; // world size
+    const player = { x: W / 2, y: H / 2 + 220, vx: 0, vy: 0, dir: -1.57, bob: 0 };
+    const stations = [
+      { id: 'diff', x: W / 2, y: H / 2 - 340, label: 'DiffContext', kicker: 'FEATURED PROJECT · 2026',
+        body: 'Repository-scale context engine. 35,270 → 10,747 tokens (-69.5%) at 79.6% precision on the requests benchmark.',
+        actions: [['▶ Play the demo', () => this.openDemo()], ['GitHub ↗', () => window.open('https://github.com/trakshan-mishra/Diffcontext', '_blank')]] },
+      { id: 'trade', x: W / 2 - 620, y: H / 2 - 40, label: 'TradeTrack Pro', kicker: 'FINTECH · 2025',
+        body: 'Real-time market data, GST tax calc, 94%-accurate OCR bill scanning. React · FastAPI · Postgres.',
+        actions: [['Live ↗', () => window.open('https://tradetrack-pro.pages.dev', '_blank')]] },
+      { id: 'movie', x: W / 2 + 620, y: H / 2 - 40, label: 'MovieMX', kicker: 'STREAMING · 2025',
+        body: 'Full-stack streaming platform — TMDB, auth, content-delivery & ad backend. Mobile-first.',
+        actions: [['Live ↗', () => window.open('https://moviemx.pages.dev', '_blank')]] },
+      { id: 'exp', x: W / 2 - 420, y: H / 2 + 420, label: 'Experience', kicker: 'THE ROAD SO FAR',
+        body: 'NextGen Invent (SWE, API latency -35%) · Modern Monk Labs (150 req/s inference) · VRARMR (NL2SQL, LangChain).',
+        actions: [['Full timeline ↓', () => this.scrollTo('experience')]] },
+      { id: 'contact', x: W / 2 + 420, y: H / 2 + 420, label: 'Hire me', kicker: 'CONTACT',
+        body: 'trakshanmishra477@gmail.com — open to founding-engineer & AI/ML roles.',
+        actions: [['Email ↗', () => { location.href = 'mailto:trakshanmishra477@gmail.com'; }], ['LinkedIn ↗', () => window.open('https://www.linkedin.com/in/trakshan-mishra-100b08206/', '_blank')]] },
+    ];
+    // scenery: cherry trees + lanterns + rocks, deterministic
+    const rnd = (i, s) => { const x = Math.sin(i * 127.1 + s * 311.7) * 43758.5453; return x - Math.floor(x); };
+    const trees = Array.from({ length: 60 }, (_, i) => ({ x: rnd(i, 1) * W, y: rnd(i, 2) * H, s: 0.7 + rnd(i, 3) * 0.9, hue: rnd(i, 4) }));
+    const rocks = Array.from({ length: 26 }, (_, i) => ({ x: rnd(i, 5) * W, y: rnd(i, 6) * H, s: 0.5 + rnd(i, 7) }));
+    const petals = Array.from({ length: 46 }, (_, i) => ({ x: Math.random() * W, y: Math.random() * H, ph: Math.random() * 6.28, s: 0.5 + Math.random() }));
+    const grass = Array.from({ length: 240 }, (_, i) => ({ x: rnd(i, 11) * W, y: rnd(i, 12) * H, s: 0.6 + rnd(i, 13) * 0.8, ph: rnd(i, 14) * 6.28 }));
+    const clouds = Array.from({ length: 7 }, (_, i) => ({ x: rnd(i, 15) * W, y: rnd(i, 16) * H, s: 1.4 + rnd(i, 17) * 2.2, v: 6 + rnd(i, 18) * 8 }));
+    const dust = [];
+    // keep scenery off stations & spawn
+    const clearR = 200;
+    [ ...stations, player ].forEach(s => { trees.forEach(t => { if (Math.hypot(t.x - s.x, t.y - s.y) < clearR) { t.x = (t.x + 500) % W; } }); });
+
+    const keys = {};
+    this.on(document, 'keydown', e => { if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d','W','A','S','D'].includes(e.key)) { const r = wrap.getBoundingClientRect(); if (r.bottom > 80 && r.top < innerHeight) { keys[e.key.toLowerCase()] = true; e.preventDefault(); } } });
+    this.on(document, 'keyup', e => { keys[e.key.toLowerCase()] = false; });
+    // joystick: mouse drags anywhere on canvas; touch uses the dedicated corner widget (page stays scrollable)
+    let joy = null;
+    const joyEl = document.getElementById('tk-joy'), knob = document.getElementById('tk-joy-knob');
+    const isTouch = matchMedia('(pointer: coarse)').matches;
+    if (isTouch && joyEl) joyEl.style.display = 'flex';
+    const jStart = (x, y) => { joy = { ox: x, oy: y, dx: 0, dy: 0 }; };
+    const jMove = (x, y) => {
+      if (!joy) return;
+      joy.dx = Math.max(-1, Math.min(1, (x - joy.ox) / 48));
+      joy.dy = Math.max(-1, Math.min(1, (y - joy.oy) / 48));
+      if (knob) knob.style.transform = `translate(${joy.dx * 26}px, ${joy.dy * 26}px)`;
+    };
+    const jEnd = () => { joy = null; if (knob) knob.style.transform = 'none'; };
+    this.on(cv, 'pointerdown', e => { if (e.pointerType === 'mouse') jStart(e.clientX, e.clientY); });
+    this.on(joyEl, 'pointerdown', e => { const r = joyEl.getBoundingClientRect(); jStart(r.left + r.width / 2, r.top + r.height / 2); jMove(e.clientX, e.clientY); joyEl.setPointerCapture(e.pointerId); e.preventDefault(); });
+    this.on(joyEl, 'pointermove', e => { jMove(e.clientX, e.clientY); if (joy) e.preventDefault(); });
+    this.on(window, 'pointermove', e => { if (joy && e.target !== joyEl) jMove(e.clientX, e.clientY); });
+    this.on(window, 'pointerup', jEnd);
+    this.on(joyEl, 'pointerup', jEnd);
+
+    const card = document.getElementById('tk-world-card');
+    const hint = document.getElementById('tk-world-hint');
+    let activeStation = null;
+    const showCard = (st) => {
+      if (activeStation === st) return;
+      activeStation = st;
+      if (!st) { card.style.opacity = '0'; card.style.pointerEvents = 'none'; card.style.transform = 'translateX(-50%) translateY(16px)'; return; }
+      document.getElementById('tk-wc-kicker').textContent = st.kicker;
+      document.getElementById('tk-wc-title').textContent = st.label;
+      document.getElementById('tk-wc-body').textContent = st.body;
+      const act = document.getElementById('tk-wc-actions'); act.innerHTML = '';
+      st.actions.forEach(([label, fn]) => {
+        const b = document.createElement('button');
+        b.textContent = label;
+        b.style.cssText = 'display:inline-flex;align-items:center;height:36px;padding:0 16px;background:var(--accent);color:var(--accent-ink);border:none;border-radius:999px;font-family:inherit;font-weight:600;font-size:13px;cursor:pointer;';
+        b.addEventListener('click', fn);
+        act.appendChild(b);
+      });
+      card.style.opacity = '1'; card.style.pointerEvents = 'auto'; card.style.transform = 'translateX(-50%) translateY(0)';
+    };
+
+    let t = 0, last = performance.now(), moved = false;
+    const loop = (now) => {
+      this._worldRaf = requestAnimationFrame(loop);
+      const r = wrap.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > innerHeight) return;
+      const dt = Math.min(0.05, (now - last) / 1000); last = now; t += dt;
+      const A = this.rgb.a;
+      const dark = this.theme === 'dark';
+      // input
+      let ix = (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0);
+      let iy = (keys.s || keys.arrowdown ? 1 : 0) - (keys.w || keys.arrowup ? 1 : 0);
+      if (joy) { ix += joy.dx; iy += joy.dy; }
+      const il = Math.hypot(ix, iy);
+      if (il > 1) { ix /= il; iy /= il; }
+      const sprinting = keys.shift && il > 0;
+      const SP = sprinting ? 620 : 340;
+      player.vx += (ix * SP - player.vx) * Math.min(1, dt * 8);
+      player.vy += (iy * SP - player.vy) * Math.min(1, dt * 8);
+      player.x = Math.max(60, Math.min(W - 60, player.x + player.vx * dt));
+      player.y = Math.max(60, Math.min(H - 60, player.y + player.vy * dt));
+      const speed = Math.hypot(player.vx, player.vy);
+      if (speed > 20) {
+        player.dir += (Math.atan2(player.vy, player.vx) - player.dir) * Math.min(1, dt * 10);
+        player.bob += dt * (sprinting ? 16 : 11);
+        if (!moved) { moved = true; hint.style.opacity = '0.35'; }
+        if (Math.random() < (sprinting ? 0.5 : 0.18)) dust.push({ x: player.x - Math.cos(player.dir) * 10, y: player.y + 10, life: 1, s: 2 + Math.random() * 2.5 });
+      }
+      // soft collision with tree trunks
+      trees.forEach(tr => { const dx = player.x - tr.x, dy = player.y - (tr.y - 6); const d = Math.hypot(dx, dy); const rr = 22 * tr.s; if (d < rr && d > 0.01) { player.x = tr.x + dx / d * rr; player.y = (tr.y - 6) + dy / d * rr; } });
+      // camera
+      const camX = Math.max(vw / 2, Math.min(W - vw / 2, player.x));
+      const camY = Math.max(vh / 2, Math.min(H - vh / 2, player.y));
+      const sx = x => x - camX + vw / 2, sy = y => y - camY + vh / 2;
+
+      // ---- draw ----
+      // anime sky-ground gradient
+      const g = ctx.createLinearGradient(0, 0, 0, vh);
+      if (dark) { g.addColorStop(0, '#1B1210'); g.addColorStop(0.5, '#201613'); g.addColorStop(1, '#171110'); }
+      else { g.addColorStop(0, '#F6E8D4'); g.addColorStop(0.5, '#F0E2CC'); g.addColorStop(1, '#EADDC4'); }
+      ctx.fillStyle = g; ctx.fillRect(0, 0, vw, vh);
+      // ground dots
+      const gap = 90;
+      ctx.fillStyle = dark ? 'rgba(240,235,224,0.05)' : 'rgba(33,29,23,0.05)';
+      for (let x = Math.floor((camX - vw / 2) / gap) * gap; x < camX + vw / 2 + gap; x += gap)
+        for (let y = Math.floor((camY - vh / 2) / gap) * gap; y < camY + vh / 2 + gap; y += gap)
+          ctx.fillRect(sx(x), sy(y), 3, 3);
+      // paths: soft roads from center to each station
+      ctx.strokeStyle = dark ? 'rgba(240,235,224,0.07)' : 'rgba(33,29,23,0.08)'; ctx.lineWidth = 26; ctx.lineCap = 'round';
+      stations.forEach(st => { ctx.beginPath(); ctx.moveTo(sx(W / 2), sy(H / 2 + 100)); ctx.quadraticCurveTo(sx((W / 2 + st.x) / 2), sy(st.y + 120), sx(st.x), sy(st.y)); ctx.stroke(); });
+      // grass tufts (swaying)
+      grass.forEach(gr => {
+        const x = sx(gr.x), y = sy(gr.y); if (x < -20 || x > vw + 20 || y < -20 || y > vh + 20) return;
+        const sw = Math.sin(t * 2 + gr.ph) * 2.4 * gr.s;
+        ctx.strokeStyle = dark ? 'rgba(150,120,80,0.35)' : 'rgba(120,130,70,0.4)'; ctx.lineWidth = 1.6; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + sw, y - 6 * gr.s, x + sw * 1.6, y - 11 * gr.s); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x + 3, y); ctx.quadraticCurveTo(x + 3 - sw, y - 5 * gr.s, x + 3 - sw * 1.4, y - 9 * gr.s); ctx.stroke();
+      });
+      // rocks
+      rocks.forEach(rk => { const x = sx(rk.x), y = sy(rk.y); if (x < -60 || x > vw + 60 || y < -60 || y > vh + 60) return; ctx.fillStyle = dark ? 'rgba(240,235,224,0.08)' : 'rgba(33,29,23,0.1)'; ctx.beginPath(); ctx.ellipse(x, y, 14 * rk.s, 9 * rk.s, 0.3, 0, 6.29); ctx.fill(); });
+      // trees (cherry) — depth-sorted against the player so you walk behind/in front
+      const treesBack = [], treesFront = [];
+      trees.forEach(tr => (tr.y - 6 < player.y ? treesBack : treesFront).push(tr));
+      const drawTree = tr => {
+        const x = sx(tr.x), y = sy(tr.y); if (x < -80 || x > vw + 80 || y < -100 || y > vh + 60) return;
+        const s = tr.s, sway = Math.sin(t * 1.2 + tr.x) * 2 * s;
+        ctx.fillStyle = dark ? 'rgba(90,60,45,0.9)' : 'rgba(122,86,64,0.9)';
+        ctx.fillRect(x - 3 * s, y - 26 * s, 6 * s, 26 * s);
+        const cols = dark ? ['rgba(214,110,88,0.85)', 'rgba(232,140,110,0.8)', 'rgba(190,95,80,0.85)'] : ['rgba(238,155,150,0.92)', 'rgba(244,178,168,0.9)', 'rgba(230,135,125,0.92)'];
+        [[0, -40, 20], [-15, -30, 14], [15, -30, 14]].forEach(([ox, oy, rr], i) => { ctx.fillStyle = cols[i]; ctx.beginPath(); ctx.arc(x + ox * s + sway, y + oy * s, rr * s, 0, 6.29); ctx.fill(); });
+        ctx.fillStyle = dark ? 'rgba(0,0,0,0.3)' : 'rgba(33,29,23,0.12)';
+        ctx.beginPath(); ctx.ellipse(x, y + 4, 22 * s, 7 * s, 0, 0, 6.29); ctx.fill();
+      };
+      treesBack.forEach(drawTree);
+      // petals drifting
+      petals.forEach(p => {
+        p.x += Math.sin(t + p.ph) * 0.4 + 0.5; p.y += 0.35 * p.s; if (p.y > H) { p.y = 0; } if (p.x > W) p.x = 0;
+        const x = sx(p.x), y = sy(p.y); if (x < 0 || x > vw || y < 0 || y > vh) return;
+        ctx.fillStyle = dark ? 'rgba(232,140,110,0.5)' : 'rgba(230,135,125,0.55)';
+        ctx.beginPath(); ctx.ellipse(x, y, 3 * p.s, 1.8 * p.s, t + p.ph, 0, 6.29); ctx.fill();
+      });
+      // stations: torii-style gates
+      let near = null;
+      stations.forEach(st => {
+        const x = sx(st.x), y = sy(st.y);
+        const d = Math.hypot(player.x - st.x, player.y - st.y);
+        const glow = Math.max(0, 1 - d / 260);
+        if (d < 150) near = st;
+        if (x < -140 || x > vw + 140 || y < -160 || y > vh + 60) return;
+        // glow pool
+        ctx.fillStyle = `rgba(${A},${0.10 + glow * 0.15})`;
+        ctx.beginPath(); ctx.ellipse(x, y + 8, 70 + glow * 16, 20 + glow * 5, 0, 0, 6.29); ctx.fill();
+        // gate: two pillars + double lintel
+        const gh = 84, gw = 62;
+        ctx.fillStyle = `rgb(${A})`;
+        ctx.fillRect(x - gw / 2 - 5, y - gh, 10, gh);
+        ctx.fillRect(x + gw / 2 - 5, y - gh, 10, gh);
+        ctx.fillRect(x - gw / 2 - 18, y - gh - 4, gw + 36, 9);
+        ctx.fillRect(x - gw / 2 - 26, y - gh - 18, gw + 52, 11);
+        // label
+        ctx.font = '600 13px Geist, sans-serif'; ctx.textAlign = 'center';
+        ctx.fillStyle = dark ? `rgba(240,235,224,${0.75 + glow * 0.25})` : `rgba(33,29,23,${0.75 + glow * 0.25})`;
+        ctx.fillText(st.label, x, y - gh - 30);
+        if (glow > 0.4) { ctx.font = '10px JetBrains Mono, monospace'; ctx.fillStyle = `rgba(${A},${glow})`; ctx.fillText('· approach ·', x, y + 34); }
+      });
+      // quest tracking
+      if (near && !near.visited) {
+        near.visited = true;
+        const lit = stations.filter(s => s.visited).length;
+        const dots = document.querySelectorAll('.tk-qdot');
+        for (let i = 0; i < lit; i++) dots[i] && dots[i].classList.add('lit');
+        if (lit === stations.length) {
+          const dn = document.getElementById('tk-quest-done'); if (dn) dn.style.display = 'block';
+          for (let i = 0; i < 60; i++) dust.push({ x: player.x + (Math.random() - .5) * 160, y: player.y - Math.random() * 120, life: 1.6, s: 2.5 + Math.random() * 3, confetti: true });
+          this.runTerm && this.runTerm('sudo hire');
+        }
+      }
+      showCard(near);
+      // dust / confetti particles
+      for (let i = dust.length - 1; i >= 0; i--) {
+        const d = dust[i]; d.life -= dt * (d.confetti ? 0.5 : 1.6); d.y -= dt * (d.confetti ? 34 : 10);
+        if (d.life <= 0) { dust.splice(i, 1); continue; }
+        ctx.fillStyle = d.confetti ? `rgba(${A},${d.life * 0.6})` : (dark ? `rgba(240,235,224,${d.life * 0.25})` : `rgba(33,29,23,${d.life * 0.18})`);
+        ctx.beginPath(); ctx.arc(sx(d.x), sy(d.y), d.s * d.life, 0, 6.29); ctx.fill();
+      }
+      // player: chibi walker
+      const px = sx(player.x), py = sy(player.y);
+      const bob = Math.sin(player.bob) * (speed > 20 ? 2.5 : 0.8);
+      ctx.fillStyle = dark ? 'rgba(0,0,0,0.35)' : 'rgba(33,29,23,0.18)';
+      ctx.beginPath(); ctx.ellipse(px, py + 12, 13, 5, 0, 0, 6.29); ctx.fill();
+      // body (cloak)
+      ctx.fillStyle = `rgb(${A})`;
+      ctx.beginPath(); ctx.moveTo(px - 9, py + 10); ctx.quadraticCurveTo(px, py - 14 + bob, px + 9, py + 10); ctx.closePath(); ctx.fill();
+      // head
+      ctx.fillStyle = dark ? '#F0E2CC' : '#FCF6EA';
+      ctx.beginPath(); ctx.arc(px, py - 16 + bob, 8, 0, 6.29); ctx.fill();
+      // hair fringe (anime swoosh)
+      ctx.fillStyle = '#3B2B22';
+      ctx.beginPath(); ctx.arc(px, py - 18 + bob, 8, Math.PI * 0.95, Math.PI * 2.05); ctx.fill();
+      // scarf trailing by direction
+      ctx.strokeStyle = `rgba(${A},0.85)`; ctx.lineWidth = 4; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(px, py - 8 + bob);
+      ctx.quadraticCurveTo(px - Math.cos(player.dir) * 14, py - 6 + bob - Math.sin(player.dir) * 8, px - Math.cos(player.dir) * (sprinting ? 30 : 22), py - 2 + bob + Math.sin(t * 6) * 3);
+      ctx.stroke();
+      // trees in front of the player
+      treesFront.forEach(drawTree);
+      // drifting cloud shadows
+      clouds.forEach(c => {
+        c.x = (c.x + c.v * dt) % (W + 400);
+        const x = sx(c.x - 200), y = sy(c.y);
+        if (x < -300 || x > vw + 300 || y < -200 || y > vh + 200) return;
+        ctx.fillStyle = dark ? 'rgba(0,0,0,0.13)' : 'rgba(33,29,23,0.05)';
+        ctx.beginPath(); ctx.ellipse(x, y, 130 * c.s, 46 * c.s, 0, 0, 6.29); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(x + 80 * c.s, y + 14 * c.s, 90 * c.s, 32 * c.s, 0, 0, 6.29); ctx.fill();
+      });
+
+      // minimap
+      mmx.clearRect(0, 0, 132, 92);
+      mmx.fillStyle = `rgba(${A},0.9)`;
+      stations.forEach(st => { mmx.fillRect(st.x / W * 132 - 2, st.y / H * 92 - 2, 4, 4); });
+      mmx.fillStyle = dark ? '#F0EBE0' : '#211D17';
+      mmx.beginPath(); mmx.arc(player.x / W * 132, player.y / H * 92, 3, 0, 6.29); mmx.fill();
+    };
+    this._worldRaf = requestAnimationFrame(loop);
+    this._cleanup.push(() => this._worldRaf && cancelAnimationFrame(this._worldRaf));
+  }
+
+  /* ---------- scroll-driven story ---------- */
+  initStory() {
+    const cv = document.getElementById('tk-story-canvas');
+    const section = document.getElementById('story');
+    if (!cv || !section) return;
+    const ctx = cv.getContext('2d');
+    let w = 0, h = 0, dpr;
+    const resize = () => { dpr = Math.min(devicePixelRatio || 1, 2); w = cv.clientWidth; h = cv.clientHeight; cv.width = w * dpr; cv.height = h * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); layout(); };
+    const files = ['api.py','sessions.py','adapters.py','models.py','cookies.py','auth.py','hooks.py','utils.py','exceptions.py','structures.py','status_codes.py','compat.py','_internal_utils.py','certs.py','packages.py','help.py'];
+    const E = [['api.py','sessions.py'],['api.py','models.py'],['sessions.py','adapters.py'],['sessions.py','models.py'],['sessions.py','cookies.py'],['sessions.py','hooks.py'],['sessions.py','auth.py'],['sessions.py','utils.py'],['sessions.py','exceptions.py'],['sessions.py','structures.py'],['adapters.py','models.py'],['adapters.py','utils.py'],['adapters.py','exceptions.py'],['models.py','cookies.py'],['models.py','structures.py'],['models.py','hooks.py'],['models.py','exceptions.py'],['models.py','compat.py'],['models.py','_internal_utils.py'],['cookies.py','_internal_utils.py'],['auth.py','_internal_utils.py'],['utils.py','compat.py'],['utils.py','certs.py'],['status_codes.py','structures.py'],['help.py','packages.py']];
+    const tracePath = ['api.py','sessions.py','adapters.py','models.py','cookies.py','hooks.py','exceptions.py'];
+    const retained = new Set(tracePath.concat(['utils.py']));
+    const idx = Object.fromEntries(files.map((f, i) => [f, i]));
+    const nodes = files.map((f) => ({ f, x: 0, y: 0, r: tracePath.includes(f) ? 7 : 5 }));
+    const layout = () => {
+      const cx = w * 0.68, cy = h / 2, R = Math.min(w * 0.3, h * 0.36);
+      nodes.forEach((n, i) => {
+        if (n.f === 'sessions.py') { n.x = cx; n.y = cy; return; }
+        const k = i < idx['sessions.py'] ? i : i - 1;
+        const ang = (k / (files.length - 1)) * Math.PI * 2 - Math.PI / 2;
+        n.x = cx + Math.cos(ang) * R; n.y = cy + Math.sin(ang) * R;
+      });
+    };
+    resize(); this.on(window, 'resize', resize);
+    const tokensEl = document.getElementById('tk-story-tokens');
+    const pctEl = document.getElementById('tk-story-pct');
+    const caps = [1, 2, 3].map(i => document.getElementById('tk-story-c' + i));
+    const nodeByF = f => nodes[idx[f]];
+    let progress = 0, shown = 0;
+    const onScroll = () => {
+      const r = section.getBoundingClientRect();
+      const total = r.height - innerHeight;
+      progress = Math.max(0, Math.min(1, -r.top / total));
+    };
+    this.on(window, 'scroll', onScroll, { passive: true }); onScroll();
+    const draw = () => {
+      this._storyRaf = requestAnimationFrame(draw);
+      const r = section.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > innerHeight) return; // offscreen
+      const p = this.reduced ? (progress < 0.5 ? 0 : 1) : progress;
+      const A = this.rgb.a, N = this.rgb.n;
+      // phases: 0-.3 full graph · .3-.65 tracing · .65-1 pruning
+      const tp = Math.max(0, Math.min(1, (p - 0.3) / 0.35));   // trace progress
+      const pp = Math.max(0, Math.min(1, (p - 0.65) / 0.3));   // prune progress
+      // captions
+      const want = p < 0.3 ? 0 : p < 0.65 ? 1 : 2;
+      if (want !== shown) { shown = want; caps.forEach((c, i) => c.style.opacity = i === want ? '1' : '0'); }
+      pctEl.style.opacity = pp > 0.5 ? '1' : '0';
+      // tokens scrub
+      const tok = Math.round(35270 - (35270 - 10747) * pp);
+      tokensEl.textContent = tok.toLocaleString('en-US');
+      tokensEl.style.color = pp > 0.5 ? `rgb(${A})` : '';
+      ctx.clearRect(0, 0, w, h);
+      const segF = tp * (tracePath.length - 1);
+      const litCount = Math.floor(segF);
+      const isLit = f => tracePath.indexOf(f) > -1 && tracePath.indexOf(f) <= litCount;
+      const alphaOf = f => retained.has(f) ? 1 : 1 - pp * 0.94;
+      E.forEach(([a, b]) => {
+        const P = nodeByF(a), Q = nodeByF(b);
+        const ia = tracePath.indexOf(a), ib = tracePath.indexOf(b);
+        const hotEdge = ia > -1 && ib > -1 && Math.min(ia, ib) < litCount && Math.abs(ia - ib) === 1;
+        const al = Math.min(alphaOf(a), alphaOf(b));
+        ctx.beginPath(); ctx.moveTo(P.x, P.y); ctx.lineTo(Q.x, Q.y);
+        ctx.strokeStyle = hotEdge ? `rgba(${A},${0.6 * al})` : `rgba(${N},${0.3 * al})`;
+        ctx.lineWidth = hotEdge ? 1.7 : 0.8; ctx.stroke();
+      });
+      // pulse
+      if (tp > 0 && tp < 1) {
+        const s = Math.min(litCount, tracePath.length - 2), f = segF - s;
+        const P = nodeByF(tracePath[s]), Q = nodeByF(tracePath[s + 1]);
+        const px = P.x + (Q.x - P.x) * f, py = P.y + (Q.y - P.y) * f;
+        ctx.beginPath(); ctx.arc(px, py, 5.5, 0, 6.29); ctx.fillStyle = `rgba(${A},1)`; ctx.shadowColor = `rgba(${A},0.9)`; ctx.shadowBlur = 16; ctx.fill(); ctx.shadowBlur = 0;
+      }
+      ctx.font = '10.5px JetBrains Mono, monospace'; ctx.textAlign = 'center';
+      nodes.forEach(n => {
+        const lit = isLit(n.f) || (pp > 0 && retained.has(n.f));
+        const al = alphaOf(n.f);
+        ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, 6.29);
+        if (lit) { ctx.fillStyle = `rgba(${A},${al})`; ctx.shadowColor = `rgba(${A},0.7)`; ctx.shadowBlur = 10; }
+        else { ctx.fillStyle = `rgba(${N},${0.75 * al})`; ctx.shadowBlur = 0; }
+        ctx.fill(); ctx.shadowBlur = 0;
+        ctx.fillStyle = lit ? `rgba(${A},${al})` : `rgba(${N},${0.9 * al})`;
+        ctx.fillText(n.f, n.x, n.y - n.r - 7);
+      });
+    };
+    draw();
+    this._cleanup.push(() => this._storyRaf && cancelAnimationFrame(this._storyRaf));
+  }
+}
+</script>
+</body>
+</html>

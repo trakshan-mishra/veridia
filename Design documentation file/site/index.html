@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Veridia — Trakshan Mishra</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; overflow:hidden; background:#1A1512; }
+  body { font-family:'Geist', sans-serif; color:#F2ECDF; }
+  a { color:#FFC98A; text-decoration:none; }
+  canvas.gl { display:block; }
+  .mono { font-family:'JetBrains Mono', monospace; }
+  #hud { position:fixed; inset:0; pointer-events:none; z-index:5; }
+  #compass { position:absolute; top:18px; left:50%; transform:translateX(-50%); width:min(520px, 72vw); height:46px; overflow:hidden;
+    -webkit-mask:linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent); mask:linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent); }
+  #compass .tick { position:absolute; top:0; font-size:10px; letter-spacing:0.1em; color:rgba(242,236,223,0.75); transform:translateX(-50%); text-align:center; text-shadow:0 1px 4px rgba(0,0,0,0.8); }
+  #compass .tick .pip { width:5px; height:5px; border-radius:50%; margin:3px auto 0; }
+  #compass .center { position:absolute; left:50%; top:24px; width:1px; height:10px; background:#FFC98A; }
+  #qarrow { position:absolute; top:0; font-size:13px; color:#FFD75E; transform:translateX(-50%); text-shadow:0 0 8px rgba(255,215,94,0.9); }
+  #trackd { position:absolute; top:66px; left:50%; transform:translateX(-50%); font-size:11px; letter-spacing:0.18em; color:#FFD75E; text-shadow:0 1px 4px rgba(0,0,0,0.8); }
+  #vitals { position:absolute; left:34px; bottom:34px; width:230px; }
+  .bar { height:10px; border-radius:6px; background:rgba(20,16,12,0.6); border:1px solid rgba(242,236,223,0.18); overflow:hidden; margin-top:6px; }
+  .bar > div { height:100%; border-radius:6px; transition:width .2s; }
+  #hp-f { width:100%; background:linear-gradient(90deg,#E86A5A,#FF9A6B); }
+  #st-f { width:100%; background:linear-gradient(90deg,#6BC48A,#B8E86B); }
+  .vlab { font-size:9px; letter-spacing:0.26em; color:rgba(242,236,223,0.55); margin-top:9px; }
+  #vel-row { display:flex; justify-content:space-between; align-items:baseline; margin-top:10px; }
+  #vel-n { font-size:30px; font-weight:300; }
+  #tok-hud { font-size:15px; color:#FFC98A; }
+  #buff { font-size:10px; letter-spacing:0.16em; color:#B8E86B; margin-top:6px; opacity:0; transition:opacity .3s; }
+  #near { position:absolute; right:34px; bottom:34px; text-align:right; }
+  #near .lab { font-size:10px; letter-spacing:0.28em; color:rgba(242,236,223,0.5); margin-bottom:4px; }
+  #near .val { font-size:26px; font-weight:300; color:#FFC98A; }
+  #near .dist { font-size:12px; color:rgba(242,236,223,0.5); margin-top:2px; }
+  #interact { position:absolute; left:50%; bottom:190px; transform:translateX(-50%); font-size:12px; letter-spacing:0.2em; color:#1A120C; background:#FFC98A; border-radius:999px; padding:8px 18px; opacity:0; transition:opacity .25s; }
+  #minimap { position:absolute; right:30px; top:64px; width:150px; height:150px; border-radius:50%; border:1px solid rgba(242,236,223,0.25); background:rgba(20,16,12,0.55); backdrop-filter:blur(6px); }
+  #quests { position:absolute; top:64px; left:34px; max-width:280px; pointer-events:auto; }
+  #quests .lab { font-size:10px; letter-spacing:0.28em; color:rgba(242,236,223,0.5); margin-bottom:8px; }
+  .q { font-size:12px; line-height:1.45; color:rgba(242,236,223,0.85); background:rgba(24,18,13,0.6); backdrop-filter:blur(6px); border:1px solid rgba(255,201,138,0.2); border-left:2px solid #FFC98A; border-radius:6px; padding:8px 11px; margin-bottom:7px; cursor:pointer; }
+  .q.side { border-left-color:#6BC48A; }
+  .q.done { border-left-color:rgba(242,236,223,0.3); color:rgba(242,236,223,0.45); text-decoration:line-through; cursor:default; }
+  .q.tracked { border-color:rgba(255,215,94,0.7); box-shadow:0 0 12px rgba(255,215,94,0.15); }
+  .q b { color:#FFC98A; font-weight:500; }
+  .q .trk { color:#FFD75E; }
+  #toast { position:absolute; top:110px; left:50%; transform:translateX(-50%); font-size:13px; letter-spacing:0.12em; color:#FFC98A; background:rgba(24,18,13,0.85); border:1px solid rgba(255,201,138,0.4); border-radius:999px; padding:9px 20px; opacity:0; transition:opacity .3s; white-space:nowrap; z-index:7; }
+  #dialog { position:absolute; left:50%; bottom:64px; transform:translateX(-50%) translateY(12px); width:720px; max-width:calc(100vw - 48px);
+    background:rgba(26,19,13,0.88); backdrop-filter:blur(12px); border:1px solid rgba(255,201,138,0.3); border-radius:12px; padding:18px 22px;
+    opacity:0; transition:opacity .3s ease, transform .3s ease; pointer-events:auto; display:flex; gap:18px; align-items:flex-start; }
+  #dialog.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  #dg-portrait { width:96px; height:96px; border-radius:10px; object-fit:cover; border:1px solid rgba(255,201,138,0.35); flex:none; display:none; }
+  #dg-main { flex:1; min-width:0; }
+  #dg-name { font-size:12px; letter-spacing:0.3em; color:#FFC98A; margin-bottom:8px; }
+  #dg-text { font-size:16.5px; line-height:1.55; color:#F6EFE2; min-height:50px; }
+  #dg-foot { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:12px; font-size:11px; letter-spacing:0.14em; color:rgba(242,236,223,0.45); flex-wrap:wrap; }
+  #dg-actions { display:flex; gap:10px; flex-wrap:wrap; }
+  #dg-actions a, #dg-actions button { pointer-events:auto; font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.1em; color:#FFC98A; background:rgba(255,201,138,0.1); border:1px solid rgba(255,201,138,0.35); border-radius:6px; padding:7px 13px; cursor:pointer; }
+  #dg-actions .gold { color:#B8E86B; border-color:rgba(184,232,107,0.4); background:rgba(184,232,107,0.08); }
+  #start { position:fixed; inset:0; z-index:10; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; background:radial-gradient(120% 90% at 50% 70%, rgba(60,32,16,0.5), rgba(16,10,7,0.94)); cursor:pointer; transition:opacity .6s ease; }
+  #start img { width:130px; height:130px; border-radius:50%; object-fit:cover; object-position:top; border:2px solid rgba(255,201,138,0.5); box-shadow:0 0 40px rgba(255,178,94,0.3); }
+  #start .kick { font-size:11px; letter-spacing:0.4em; color:#FFC98A; }
+  #start h1 { font-weight:300; font-size:clamp(32px,5.6vw,58px); letter-spacing:0.06em; color:#FBF3E4; }
+  #start p { font-size:13px; color:rgba(242,236,223,0.65); letter-spacing:0.1em; text-align:center; padding:0 20px; line-height:1.7; }
+  #start .btn { margin-top:8px; font-family:'JetBrains Mono',monospace; font-size:13px; letter-spacing:0.2em; color:#1A120C; background:#FFC98A; border:none; border-radius:999px; padding:15px 36px; cursor:pointer; }
+  #plink { position:absolute; top:20px; right:30px; pointer-events:auto; font-size:11px; letter-spacing:0.22em; color:rgba(242,236,223,0.6); z-index:6; text-shadow:0 1px 4px rgba(0,0,0,0.8); }
+  #plink:hover { color:#FFC98A; }
+  #mute { position:absolute; top:20px; left:30px; pointer-events:auto; z-index:6; font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.18em; color:rgba(242,236,223,0.6); background:rgba(24,18,13,0.5); border:1px solid rgba(242,236,223,0.2); border-radius:999px; padding:7px 14px; cursor:pointer; }
+  /* tavern interior */
+  #tavern { position:fixed; inset:0; z-index:9; display:none; background:#0C0805; }
+  #tavern .bg { position:absolute; inset:0; background:url('assets/tavern_interior.png') center/cover; }
+  #tavern .veil { position:absolute; inset:0; background:radial-gradient(90% 80% at 50% 60%, transparent, rgba(8,5,3,0.55)); }
+  #tv-bar { position:absolute; left:50%; bottom:48px; transform:translateX(-50%); width:720px; max-width:calc(100vw - 40px); background:rgba(20,13,8,0.9); backdrop-filter:blur(10px); border:1px solid rgba(255,201,138,0.35); border-radius:14px; padding:20px 24px; display:flex; gap:20px; align-items:flex-start; }
+  #tv-bar img.face { width:110px; height:110px; border-radius:12px; object-fit:cover; object-position:top; border:1px solid rgba(255,201,138,0.4); flex:none; }
+  #tv-text { font-size:16px; line-height:1.55; color:#F6EFE2; min-height:48px; }
+  #tv-name { font-size:12px; letter-spacing:0.3em; color:#FFC98A; margin-bottom:8px; }
+  #tv-actions { display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; }
+  #tv-actions button { font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.1em; color:#FFC98A; background:rgba(255,201,138,0.1); border:1px solid rgba(255,201,138,0.35); border-radius:6px; padding:8px 14px; cursor:pointer; }
+  #tv-actions .gold { color:#B8E86B; border-color:rgba(184,232,107,0.4); }
+  #mug-wrap { position:absolute; left:50%; top:38%; transform:translate(-50%,-50%); width:180px; height:180px; display:none; }
+  #mug-wrap img { width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 10px 30px rgba(0,0,0,0.6)); }
+  #mug-fill { position:absolute; inset:0; overflow:hidden; }
+  @keyframes mugpour { 0%{clip-path:inset(100% 0 0 0);} 100%{clip-path:inset(0 0 0 0);} }
+  #mug-wrap.pour img { animation:mugpour 1.4s ease forwards; }
+  .stick { position:absolute; bottom:96px; width:112px; height:112px; border-radius:50%; border:1px solid rgba(242,236,223,0.25); background:rgba(24,18,13,0.4); backdrop-filter:blur(6px); display:none; align-items:center; justify-content:center; pointer-events:auto; touch-action:none; z-index:6; }
+  .stick .knob { width:44px; height:44px; border-radius:50%; background:rgba(255,201,138,0.8); }
+  #stickL { left:26px; } #stickR { right:26px; }
+  #stickR .knob { background:rgba(242,236,223,0.4); }
+  @media (pointer:coarse) {
+    .stick { display:flex; }
+    #vitals { left:22px; bottom:230px; width:170px; }
+    #near { right:22px; bottom:230px; }
+    #dialog { bottom:236px; }
+    #quests { display:none; }
+    #minimap { width:110px; height:110px; top:56px; right:22px; }
+    #dg-portrait { width:64px; height:64px; }
+  }
+  @media (max-width:720px) { #compass { width:60vw; } #tv-bar img.face { width:70px; height:70px; } }
+</style>
+<template id="__bundler_thumbnail">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="#3A2418"/><circle cx="50" cy="42" r="16" fill="#FFC98A"/><rect x="30" y="62" width="40" height="8" rx="4" fill="#FFC98A"/></svg>
+</template>
+</head>
+<body>
+<div id="start">
+  <img src="assets/player.png" alt="">
+  <div class="kick mono">TRAKSHAN MISHRA · OPEN-WORLD PORTFOLIO</div>
+  <h1>V E R I D I A</h1>
+  <p class="mono">a dusk village holds his story — quests, tokens ◈, elixirs, a tavern<br>and five keepers who remember everything</p>
+  <button class="btn mono" id="enter">▶ &nbsp;BEGIN</button>
+  <p class="mono" style="opacity:.5">WASD walk · mouse look · SHIFT sprint · E interact · M sound · click quest to track</p>
+</div>
+<div id="tavern">
+  <div class="bg"></div><div class="veil"></div>
+  <div id="mug-wrap"><div id="mug-fill"><img src="assets/prop_mug.png" alt=""></div></div>
+  <div id="tv-bar">
+    <img class="face" src="assets/bartender.png" alt="">
+    <div style="flex:1;min-width:0;">
+      <div id="tv-name" class="mono">RHEA · BARTENDER</div>
+      <div id="tv-text">—</div>
+      <div id="tv-actions"></div>
+    </div>
+  </div>
+</div>
+<div id="hud">
+  <a id="plink" class="mono" href="portfolio.html">CLASSIC PORTFOLIO ↗</a>
+  <button id="mute" class="mono">♪ SOUND ON</button>
+  <div id="compass"><div class="center"></div><div id="qarrow">▼</div></div>
+  <div id="trackd" class="mono"></div>
+  <canvas id="minimap" width="300" height="300"></canvas>
+  <div id="quests"><div class="lab mono">QUESTS · CLICK TO TRACK</div><div id="q-list"></div></div>
+  <div id="toast" class="mono"></div>
+  <div id="interact" class="mono">E · INTERACT</div>
+  <div id="vitals">
+    <div class="vlab mono">HEALTH</div><div class="bar"><div id="hp-f"></div></div>
+    <div class="vlab mono">STAMINA</div><div class="bar"><div id="st-f"></div></div>
+    <div id="vel-row"><span class="mono"><span id="vel-n">0</span> <small style="font-size:11px;opacity:.5">m/s</small></span><span id="tok-hud" class="mono">◈ <span id="tok-n">0</span></span></div>
+    <div id="buff" class="mono">🍺 TAVERN WARMTH — SPEED UP</div>
+  </div>
+  <div id="near"><div class="lab mono">NEAREST</div><div class="val" id="near-n">—</div><div class="dist mono" id="near-d"></div></div>
+  <div id="dialog">
+    <img id="dg-portrait" src="" alt="">
+    <div id="dg-main">
+      <div id="dg-name" class="mono">—</div>
+      <div id="dg-text">—</div>
+      <div id="dg-foot" class="mono"><span>[E] CONTINUE · [Q] CLOSE</span><span id="dg-actions"></span></div>
+    </div>
+  </div>
+  <div id="stickL" class="stick"><div class="knob"></div></div>
+  <div id="stickR" class="stick"><div class="knob"></div></div>
+</div>
+<script type="module">
+import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+
+const isTouch = matchMedia('(pointer: coarse)').matches;
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+renderer.setSize(innerWidth, innerHeight);
+renderer.domElement.className = 'gl';
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x63452E, 0.0085);
+const camera = new THREE.PerspectiveCamera(68, innerWidth / innerHeight, 0.1, 1200);
+
+// ---------- save ----------
+let save = { tokens: 0, quests: {}, elixirs: {}, shards: 0, met: {}, lamps: 0, tracked: 'beings', drinks: 0 };
+try { const s = localStorage.getItem('veridia-save3'); if (s) save = Object.assign(save, JSON.parse(s)); } catch (e) {}
+const persist = () => { try { localStorage.setItem('veridia-save3', JSON.stringify(save)); } catch (e) {} };
+
+// ---------- textures ----------
+const TL = new THREE.TextureLoader();
+const tex = (u, rx, ry) => { const t = TL.load(u); t.colorSpace = THREE.SRGBColorSpace; if (rx) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rx, ry || rx); } return t; };
+const T = {
+  grass: tex('assets/tex_grass.png', 42), cobble: tex('assets/tex_cobble.png', 9), dirt: tex('assets/tex_dirt.png', 1),
+  wall: tex('assets/tex_wall.png', 2, 1), roof: tex('assets/tex_roof.png', 3, 2),
+  skySunrise: tex('assets/sky_sunrise.png'), skyDusk: tex('assets/sky_dusk.png'), skyNight: tex('assets/sky_night.png'),
+  tree: tex('assets/prop_tree.png'), lamp: tex('assets/prop_lamp.png'),
+  chronicler: tex('assets/chronicler.png'), gatekeeper: tex('assets/gatekeeper.png'),
+  vanguard: tex('assets/vanguard.png'), elder: tex('assets/village_elder.png'),
+  tavernSign: tex('assets/tavern_exterior.png'),
+};
+
+// ---------- SOUND ----------
+const SFX = {
+  ctx: null, master: null, on: true,
+  boot() {
+    if (this.ctx) return;
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    this.ctx = new AC();
+    this.master = this.ctx.createGain(); this.master.gain.value = 0.5; this.master.connect(this.ctx.destination);
+    const lp = this.ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 620; lp.connect(this.master);
+    const pad = this.ctx.createGain(); pad.gain.value = 0.05; pad.connect(lp);
+    [110, 165, 220, 221.5].forEach(f => { const o = this.ctx.createOscillator(); o.type = 'sine'; o.frequency.value = f; const g = this.ctx.createGain(); g.gain.value = f > 200 ? 0.35 : 0.6; o.connect(g); g.connect(pad); o.start(); });
+    const lfo = this.ctx.createOscillator(); lfo.frequency.value = 0.05; const lg = this.ctx.createGain(); lg.gain.value = 200; lfo.connect(lg); lg.connect(lp.frequency); lfo.start();
+    setInterval(() => { if (this.on && !document.hidden && Math.random() < 0.6) this.chirp(); }, 1700);
+  },
+  env(g, a, d, peak) { const t = this.ctx.currentTime; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(peak, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + a + d); },
+  tone(f, a, d, peak, type) { if (!this.ctx || !this.on) return; const o = this.ctx.createOscillator(); o.type = type || 'sine'; o.frequency.value = f; const g = this.ctx.createGain(); o.connect(g); g.connect(this.master); this.env(g, a, d, peak); o.start(); o.stop(this.ctx.currentTime + a + d + 0.05); },
+  chirp() { this.tone(4200 + Math.random() * 800, 0.01, 0.06, 0.012); setTimeout(() => this.tone(4400, 0.01, 0.05, 0.009), 90); },
+  step() { if (!this.ctx || !this.on) return; const b = this.ctx.createBuffer(1, 900, this.ctx.sampleRate); const d = b.getChannelData(0); for (let i = 0; i < 900; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / 900); const s = this.ctx.createBufferSource(); s.buffer = b; const f = this.ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 300 + Math.random() * 150; const g = this.ctx.createGain(); g.gain.value = 0.24; s.connect(f); f.connect(g); g.connect(this.master); s.start(); },
+  blip() { this.tone(760, 0.01, 0.12, 0.05); },
+  pickup() { this.tone(880, 0.01, 0.18, 0.06); setTimeout(() => this.tone(1320, 0.01, 0.22, 0.05), 90); },
+  fanfare() { [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => this.tone(f, 0.012, 0.4, 0.07, 'triangle'), i * 130)); },
+  buy() { this.tone(392, 0.01, 0.2, 0.06, 'triangle'); setTimeout(() => this.tone(587, 0.01, 0.28, 0.06, 'triangle'), 110); },
+  gulp() { this.tone(220, 0.02, 0.1, 0.06); setTimeout(() => this.tone(180, 0.02, 0.12, 0.06), 140); setTimeout(() => this.tone(660, 0.01, 0.3, 0.05, 'triangle'), 340); },
+};
+const muteBtn = document.getElementById('mute');
+muteBtn.addEventListener('click', () => { SFX.on = !SFX.on; muteBtn.textContent = SFX.on ? '♪ SOUND ON' : '♪ MUTED'; if (SFX.on && SFX.ctx && SFX.ctx.state === 'suspended') SFX.ctx.resume(); });
+addEventListener('keydown', e => { if (e.key.toLowerCase() === 'm') muteBtn.click(); });
+
+// ---------- terrain ----------
+const hmap = (x, z) => {
+  const d = Math.hypot(x, z);
+  const flat = Math.min(1, Math.max(0, (d - 40) / 30));
+  return flat * (2.4 * Math.sin(x * 0.02) * Math.cos(z * 0.023) + 1.2 * Math.sin(x * 0.05 + 1.3) * Math.sin(z * 0.041) + 0.4 * Math.sin(x * 0.11) * Math.cos(z * 0.13));
+};
+{
+  const g = new THREE.PlaneGeometry(480, 480, 110, 110);
+  g.rotateX(-Math.PI / 2);
+  const p = g.attributes.position;
+  for (let i = 0; i < p.count; i++) p.setY(i, hmap(p.getX(i), p.getZ(i)));
+  g.computeVertexNormals();
+  scene.add(new THREE.Mesh(g, new THREE.MeshLambertMaterial({ map: T.grass })));
+  // cobblestone plaza
+  const plaza = new THREE.Mesh(new THREE.CircleGeometry(43, 48).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ map: T.cobble }));
+  plaza.position.y = 0.05; scene.add(plaza);
+}
+
+// ---------- sky dome: 3-texture day/night blend ----------
+const skyU = { uA: { value: T.skySunrise }, uB: { value: T.skyDusk }, uC: { value: T.skyNight }, wA: { value: 0 }, wB: { value: 1 }, wC: { value: 0 } };
+{
+  const sky = new THREE.Mesh(new THREE.SphereGeometry(900, 32, 20),
+    new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, fog: false, uniforms: skyU,
+      vertexShader: 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+      fragmentShader: `varying vec2 vUv; uniform sampler2D uA,uB,uC; uniform float wA,wB,wC;
+        void main(){ vec2 uv = vec2(vUv.x, clamp((vUv.y-0.42)*1.7, 0.02, 0.98));
+        vec3 c = texture2D(uA,uv).rgb*wA + texture2D(uB,uv).rgb*wB + texture2D(uC,uv).rgb*wC;
+        gl_FragColor = vec4(c,1.0);}` }));
+  scene.add(sky);
+}
+// lights (lerped by cycle)
+const hemi = new THREE.HemisphereLight(0xFFD9B0, 0x3C4A2A, 1.5); scene.add(hemi);
+const sunL = new THREE.DirectionalLight(0xFFB27A, 2.0); sunL.position.set(-180, 120, -240); scene.add(sunL);
+
+// day/night keyframes: sunrise → day → dusk → night
+const CYCLE = 720; // seconds per full day
+const KEYS = [
+  { ph: 0.00, sky: [1, 0, 0], hemiS: 0xFFD2A8, hemiG: 0x4A3A2A, hemiI: 1.3, sunC: 0xFFB27A, sunI: 1.8, fogC: 0xC9917A, fogD: 0.006, night: 0 },
+  { ph: 0.25, sky: [1, 0, 0], hemiS: 0xEAF2FF, hemiG: 0x51603C, hemiI: 1.9, sunC: 0xFFF4E0, sunI: 2.4, fogC: 0x9FB4C8, fogD: 0.004, night: 0 },
+  { ph: 0.50, sky: [0, 1, 0], hemiS: 0xFFD9B0, hemiG: 0x3C4A2A, hemiI: 1.5, sunC: 0xFFB27A, sunI: 2.0, fogC: 0x63452E, fogD: 0.0085, night: 0.55 },
+  { ph: 0.75, sky: [0, 0, 1], hemiS: 0x33415E, hemiG: 0x10141F, hemiI: 0.7, sunC: 0x8AA0FF, sunI: 0.55, fogC: 0x141B2E, fogD: 0.011, night: 1 },
+  { ph: 1.00, sky: [1, 0, 0], hemiS: 0xFFD2A8, hemiG: 0x4A3A2A, hemiI: 1.3, sunC: 0xFFB27A, sunI: 1.8, fogC: 0xC9917A, fogD: 0.006, night: 0 },
+];
+const cA = new THREE.Color(), cB = new THREE.Color();
+let nightness = 0.55;
+function applyCycle(ph) {
+  let a = KEYS[0], b = KEYS[1];
+  for (let i = 0; i < KEYS.length - 1; i++) if (ph >= KEYS[i].ph && ph <= KEYS[i + 1].ph) { a = KEYS[i]; b = KEYS[i + 1]; break; }
+  const f = (ph - a.ph) / (b.ph - a.ph || 1);
+  skyU.wA.value = a.sky[0] + (b.sky[0] - a.sky[0]) * f;
+  skyU.wB.value = a.sky[1] + (b.sky[1] - a.sky[1]) * f;
+  skyU.wC.value = a.sky[2] + (b.sky[2] - a.sky[2]) * f;
+  hemi.color.lerpColors(cA.setHex(a.hemiS), cB.setHex(b.hemiS), f);
+  hemi.groundColor.lerpColors(cA.setHex(a.hemiG), cB.setHex(b.hemiG), f);
+  hemi.intensity = a.hemiI + (b.hemiI - a.hemiI) * f;
+  sunL.color.lerpColors(cA.setHex(a.sunC), cB.setHex(b.sunC), f);
+  sunL.intensity = a.sunI + (b.sunI - a.sunI) * f;
+  scene.fog.color.lerpColors(cA.setHex(a.fogC), cB.setHex(b.fogC), f);
+  scene.fog.density = (a.fogD + (b.fogD - a.fogD) * f) * (save.elixirs.sight ? 0.65 : 1);
+  nightness = a.night + (b.night - a.night) * f;
+}
+
+// ---------- helpers ----------
+const rand = (i, s) => { const x = Math.sin(i * 127.1 + s * 311.7) * 43758.5453; return x - Math.floor(x); };
+const colliders = [];
+
+// ---------- cutout billboard helper (cross-plane) ----------
+function cutout(txr, w, h, x, z, yOff) {
+  const m = new THREE.MeshLambertMaterial({ map: txr, transparent: true, alphaTest: 0.35, side: THREE.DoubleSide });
+  const g = new THREE.Group();
+  const p1 = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m);
+  const p2 = p1.clone(); p2.rotation.y = Math.PI / 2;
+  p1.position.y = p2.position.y = h / 2;
+  g.add(p1, p2);
+  g.position.set(x, hmap(x, z) + (yOff || 0), z);
+  scene.add(g);
+  return g;
+}
+// trees
+for (let i = 0; i < 44; i++) {
+  const x = (rand(i, 1) - 0.5) * 420, z = (rand(i, 2) - 0.5) * 420;
+  if (Math.hypot(x, z) < 52) continue;
+  if (Math.abs(x) < 9 && z < 0 && z > -110) continue;
+  const s = 7 + rand(i, 3) * 8;
+  cutout(T.tree, s, s, x, z);
+  colliders.push({ x, z, r: s * 0.14 });
+}
+// dirt paths from plaza to keepers
+const KEEPER_POS = [[0, -95], [-110, -30], [110, -30], [-70, -140], [70, -140]];
+{
+  const m = new THREE.MeshLambertMaterial({ map: T.dirt });
+  KEEPER_POS.forEach(([kx, kz]) => {
+    const d = Math.hypot(kx, kz), ux = kx / d, uz = kz / d;
+    for (let s = 45; s < d - 6; s += 8.5) {
+      const x = ux * s, z = uz * s;
+      const q = new THREE.Mesh(new THREE.PlaneGeometry(6.5, 9), m);
+      q.rotation.x = -Math.PI / 2; q.rotation.z = -Math.atan2(ux, uz);
+      q.position.set(x, hmap(x, z) + 0.06, z);
+      scene.add(q);
+    }
+  });
+}
+// pond
+{
+  const x = -62, z = 42;
+  const water = new THREE.Mesh(new THREE.CircleGeometry(10, 32).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ color: 0x2E4E66, transparent: true, opacity: 0.92 }));
+  water.position.set(x, 0.35, z); scene.add(water);
+  window.__water = water.material;
+  const padM = new THREE.MeshLambertMaterial({ color: 0x3E7A4A });
+  for (let i = 0; i < 9; i++) {
+    const a = rand(i, 80) * 6.28, r = 2 + rand(i, 81) * 7;
+    const pad = new THREE.Mesh(new THREE.CircleGeometry(0.5 + rand(i, 82) * 0.4, 10).rotateX(-Math.PI / 2), padM);
+    pad.position.set(x + Math.cos(a) * r, 0.4, z + Math.sin(a) * r); scene.add(pad);
+  }
+}
+// fireflies (visible at dusk/night)
+let flies;
+{
+  const n = 200, pos = new Float32Array(n * 3), seed = [];
+  for (let i = 0; i < n; i++) { const x = (Math.random() - 0.5) * 420, z = (Math.random() - 0.5) * 420; pos.set([x, hmap(x, z) + 1 + Math.random() * 5, z], i * 3); seed.push(Math.random() * 6.28); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  flies = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xFFE9A0, size: 0.5, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false }));
+  flies.userData.seed = seed; scene.add(flies);
+}
+
+// ---------- buildings ----------
+const windowMats = [];
+function building(x, z, w, d, h, rot) {
+  const y = hmap(x, z);
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshLambertMaterial({ map: T.wall })); body.position.y = h / 2; g.add(body);
+  const rf = new THREE.Mesh(new THREE.ConeGeometry(Math.max(w, d) * 0.82, h * 0.75, 4), new THREE.MeshLambertMaterial({ map: T.roof }));
+  rf.position.y = h + h * 0.36; rf.rotation.y = Math.PI / 4; g.add(rf);
+  const door = new THREE.Mesh(new THREE.PlaneGeometry(w * 0.22, h * 0.5), new THREE.MeshBasicMaterial({ color: 0x3A2A1C }));
+  door.position.set(0, h * 0.25, d / 2 + 0.03); g.add(door);
+  [-w * 0.28, w * 0.28].forEach(wx => {
+    const wm = new THREE.MeshBasicMaterial({ color: 0x554433 }); windowMats.push(wm);
+    const win = new THREE.Mesh(new THREE.PlaneGeometry(w * 0.16, h * 0.2), wm);
+    win.position.set(wx, h * 0.55, d / 2 + 0.03); g.add(win);
+  });
+  g.position.set(x, y, z); g.rotation.y = rot;
+  scene.add(g);
+  colliders.push({ x, z, r: Math.max(w, d) * 0.74 });
+  return g;
+}
+building(-16, -32, 7, 6, 5, 0.15);
+building(18, -30, 8, 6, 5.5, -0.2);
+building(-36, 3, 9, 7, 6, 1.35);
+building(28, 10, 6, 5, 4.5, -1.2);
+building(38, -12, 6, 5, 4.5, -0.7);
+building(-30, -18, 5, 5, 4, 0.8);
+// TAVERN
+const TAVERN_DOOR = { x: -4, z: 27.6 };
+{
+  building(-4, 34, 10, 8, 7, Math.PI);
+  // hanging sign with tavern art
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 2.6), new THREE.MeshBasicMaterial({ map: T.tavernSign }));
+  sign.position.set(-4, 4.6, 29.4); sign.rotation.y = Math.PI; scene.add(sign);
+  const sign2 = sign.clone(); sign2.rotation.y = 0; sign2.position.z = 29.35; scene.add(sign2);
+}
+// street lamps — cutout art + light
+const LAMPS = [];
+[[6, -20], [-14, -6], [10, 14], [-22, 18]].forEach(([x, z]) => {
+  const g = cutout(T.lamp, 4.6, 4.6, x, z);
+  const light = new THREE.PointLight(0xFFD9A0, 0, 18); light.position.set(x, hmap(x, z) + 3.4, z); scene.add(light);
+  LAMPS.push({ x, z, light, lit: false });
+  colliders.push({ x, z, r: 0.5 });
+});
+if (save.lamps >= 4) LAMPS.forEach(L => L.lit = true);
+// fire pit
+{
+  const x = 12, z = -8, y = hmap(x, z);
+  const pit = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.9, 0.7, 8), new THREE.MeshLambertMaterial({ color: 0x7A6248 }));
+  pit.position.set(x, y + 0.35, z); scene.add(pit);
+  const fire = new THREE.PointLight(0xFF9A4D, 50, 34); fire.position.set(x, y + 2, z); scene.add(fire);
+  const flame = new THREE.Mesh(new THREE.ConeGeometry(0.7, 1.8, 6), new THREE.MeshBasicMaterial({ color: 0xFFB25E }));
+  flame.position.set(x, y + 1.6, z); scene.add(flame);
+  window.__flame = flame; window.__fire = fire;
+  colliders.push({ x, z, r: 2.4 });
+}
+
+// ---------- character standees (arched painted billboards) ----------
+const archMask = (() => {
+  const c = document.createElement('canvas'); c.width = 256; c.height = 320;
+  const x = c.getContext('2d');
+  x.fillStyle = '#000'; x.fillRect(0, 0, 256, 320);
+  x.fillStyle = '#fff';
+  x.beginPath(); x.moveTo(14, 320); x.lineTo(14, 128); x.arc(128, 128, 114, Math.PI, 0); x.lineTo(242, 320); x.closePath(); x.fill();
+  const t = new THREE.CanvasTexture(c); return t;
+})();
+function standee(txr, x, z, scale, glowColor) {
+  const h = 3.6 * (scale || 1), w = h * 0.78;
+  const g = new THREE.Group();
+  const frame = new THREE.Mesh(new THREE.PlaneGeometry(w * 1.07, h * 1.06),
+    new THREE.MeshBasicMaterial({ color: glowColor || 0xFFC98A, alphaMap: archMask, transparent: true, side: THREE.DoubleSide }));
+  frame.position.y = h / 2 - 0.03;
+  const art = new THREE.Mesh(new THREE.PlaneGeometry(w, h),
+    new THREE.MeshBasicMaterial({ map: txr, alphaMap: archMask, transparent: true, side: THREE.DoubleSide, toneMapped: false }));
+  art.position.y = h / 2; art.position.z = 0.012;
+  const shadow = new THREE.Mesh(new THREE.CircleGeometry(w * 0.42, 20).rotateX(-Math.PI / 2),
+    new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.32 }));
+  shadow.position.y = 0.03;
+  g.add(frame, art, shadow);
+  g.position.set(x, hmap(x, z), z);
+  scene.add(g);
+  const light = new THREE.PointLight(glowColor || 0xFFC98A, 8, 12); light.position.set(x, hmap(x, z) + 2.4, z); scene.add(light);
+  colliders.push({ x, z, r: 0.9 });
+  return g;
+}
+
+// ---------- QUESTS ----------
+const QUESTS = {
+  beings: { title: 'MAIN · Hear all five keepers', reward: 50, main: true, prog: () => Object.keys(save.met).length + '/5' },
+  shards: { title: 'Gather 5 glow-shards for the Elder', reward: 30, prog: () => Math.min(5, save.shards) + '/5' },
+  letter: { title: 'Deliver the Elder\u2019s letter to Rhea (tavern)', reward: 40 },
+  lamps: { title: 'SIDE · Light the 4 street lamps', reward: 20, side: true, prog: () => save.lamps + '/4' },
+};
+if (!save.quests.beings) save.quests.beings = 'active';
+const qList = document.getElementById('q-list');
+const renderQuests = () => {
+  qList.innerHTML = '';
+  Object.entries(save.quests).forEach(([id, st]) => {
+    const q = QUESTS[id]; if (!q) return;
+    const d = document.createElement('div');
+    d.className = 'q' + (q.side ? ' side' : '') + (st === 'done' ? ' done' : '') + (save.tracked === id && st !== 'done' ? ' tracked' : '');
+    d.innerHTML = (save.tracked === id && st !== 'done' ? '<span class="trk">◎ </span>' : '') + q.title + (st !== 'done' && q.prog ? ' — <b>' + q.prog() + '</b>' : '');
+    if (st !== 'done') d.addEventListener('click', () => { save.tracked = id; persist(); renderQuests(); SFX.blip(); });
+    qList.appendChild(d);
+  });
+};
+const toastEl = document.getElementById('toast');
+let toastT = null;
+const toast = (msg) => { toastEl.textContent = msg; toastEl.style.opacity = '1'; clearTimeout(toastT); toastT = setTimeout(() => toastEl.style.opacity = '0', 2600); };
+const tokEl = document.getElementById('tok-n');
+const setTokens = n => { save.tokens = n; tokEl.textContent = n; persist(); };
+setTokens(save.tokens);
+const award = (q, id) => { if (save.quests[id] === 'done') return; save.quests[id] = 'done'; setTokens(save.tokens + q.reward); toast('◈ +' + q.reward + ' TOKENS'); SFX.fanfare(); if (save.tracked === id) { const next = Object.entries(save.quests).find(([k, v]) => v !== 'done'); save.tracked = next ? next[0] : null; } persist(); renderQuests(); };
+
+// ---------- NPCS (standee + dialogue) ----------
+const NPCS = [];
+function npc(opts) {
+  const g = standee(opts.tex, opts.x, opts.z, opts.scale, opts.glow);
+  NPCS.push(Object.assign({ mesh: g }, opts));
+}
+npc({ name: 'THE VILLAGE ELDER', short: 'Elder', x: -16, z: -26, tex: T.elder, portrait: 'assets/village_elder.png', glow: 0xFFC98A,
+  lines: () => {
+    const out = [];
+    if (save.quests.shards === 'done') out.push('The shards warm my old hands still. You have a gatherer\u2019s eye.');
+    if (!save.quests.shards) return ['Welcome, traveler. This village remembers a builder — Trakshan. Five keepers in the vale carry his story.', 'While you walk: my lantern seeds scattered as glow-shards. Bring five, earn thirty tokens.', 'And take this letter to Rhea at the tavern, would you? Forty tokens for the errand.'];
+    if (save.quests.shards === 'active') return [save.shards >= 5 ? 'FIVE shards! Hand them here — your reward, as promised.' : 'Glow-shards drift near the keepers, past the tree line. ' + Math.min(5, save.shards) + ' of 5 so far.'];
+    out.push('Elixirs, then? Swiftness makes the wind jealous. Sight thins the haze.');
+    return out;
+  },
+  acts: () => {
+    const a = [];
+    if (!save.quests.shards) a.push(['ACCEPT SHARD GIG · ◈30', () => { save.quests.shards = 'active'; save.tracked = 'shards'; persist(); renderQuests(); toast('QUEST — find 5 glow-shards'); SFX.blip(); refreshDlg(); }]);
+    if (!save.quests.letter) a.push(['TAKE THE LETTER · ◈40', () => { save.quests.letter = 'active'; save.tracked = 'letter'; persist(); renderQuests(); toast('QUEST — deliver the letter to Rhea'); SFX.blip(); refreshDlg(); }]);
+    if (save.quests.shards === 'active' && save.shards >= 5) a.push(['TURN IN SHARDS', () => { award(QUESTS.shards, 'shards'); refreshDlg(); }, 'gold']);
+    if (save.quests.shards === 'done') {
+      if (!save.elixirs.swift) a.push(['BUY SWIFTNESS · ◈25', () => { if (save.tokens < 25) return toast('NOT ENOUGH TOKENS'); setTokens(save.tokens - 25); save.elixirs.swift = 1; persist(); SFX.buy(); toast('🜁 SWIFTNESS — permanent speed up'); refreshDlg(); }]);
+      if (!save.elixirs.sight) a.push(['BUY SIGHT · ◈20', () => { if (save.tokens < 20) return toast('NOT ENOUGH TOKENS'); setTokens(save.tokens - 20); save.elixirs.sight = 1; persist(); SFX.buy(); toast('🜂 SIGHT — the haze recedes'); refreshDlg(); }]);
+    }
+    return a;
+  } });
+npc({ name: 'THE VANGUARD', short: 'Vanguard', x: 18, z: -24, tex: T.vanguard, portrait: 'assets/vanguard.png', glow: 0xC9D4E8,
+  lines: () => {
+    if (save.quests.lamps === 'done') return ['The lamps burn like honor. The village sleeps easier, lamplighter.', 'The man this world remembers shipped production systems the same way — one post at a time, all of them lit.'];
+    if (save.quests.lamps) return ['Walk to each dark lamp and press E — ' + save.lamps + ' of 4 shine so far.'];
+    return ['Halt. …At ease, traveler. Dusk comes and the street lamps sit cold.', 'Light all four and twenty tokens are yours. A guard pays his debts.'];
+  },
+  acts: () => save.quests.lamps ? [] : [['ACCEPT PATROL GIG · ◈20', () => { save.quests.lamps = 'active'; save.tracked = 'lamps'; persist(); renderQuests(); toast('SIDE QUEST — light the 4 street lamps'); SFX.blip(); refreshDlg(); }]] });
+
+// keepers: 3 crystals + 2 character standees
+const BEINGS = [
+  { name: 'ORACLE OF CONTEXT', short: 'Oracle', x: 0, z: -95, color: 0x6BE8A0, crystal: true,
+    lines: () => ['You carry too much, traveler. Most of what an agent holds… it never touches.', 'Trakshan built DiffContext — a tracer that watches the interpreter walk, then burns everything off the path.', '35,270 tokens walked in. 10,747 walked out. Precision held at 79.6%.'],
+    acts: () => [['GITHUB ↗', 'https://github.com/trakshan-mishra/Diffcontext']] },
+  { name: 'WARDEN OF LEDGERS', short: 'Warden', x: -110, z: -30, color: 0x8AD4FF, crystal: true,
+    lines: () => ['Numbers flow like rivers here. TradeTrack Pro reads them live — markets, taxes, bills seen through an OCR eye at 94%.'],
+    acts: () => [['LIVE ↗', 'https://tradetrack-pro.pages.dev']] },
+  { name: 'KEEPER OF STORIES', short: 'Keeper', x: 110, z: -30, color: 0xF0A6C8, crystal: true,
+    lines: () => ['Every screen is a stage. MovieMX streams to all of them — TMDB catalogue, auth, ads, end to end.'],
+    acts: () => [['LIVE ↗', 'https://moviemx.pages.dev']] },
+  { name: 'THE CHRONICLER', short: 'Chronicler', x: -70, z: -140, color: 0xFFC98A, tex: 'chronicler', portrait: 'assets/chronicler.png',
+    lines: () => ['His road, written in flame: NextGen Invent — production apps, APIs 35% faster.', 'Modern Monk Labs — inference holding 150 requests a second.', 'VRARMR — NL2SQL, LangChain agents. Ship, measure, ship again.'],
+    acts: () => [['FULL TIMELINE ↗', 'portfolio.html#experience']] },
+  { name: 'THE GATEKEEPER', short: 'Gatekeeper', x: 70, z: -140, color: 0x9AB8E8, tex: 'gatekeeper', portrait: 'assets/gatekeeper.png',
+    lines: () => ['Few walk this far. You seek him?', 'trakshanmishra477@gmail.com — open to founding-engineer and AI/ML roles.', 'Stay until the second moonrise, friend. Or send the mail now.'],
+    acts: () => [['EMAIL ↗', 'mailto:trakshanmishra477@gmail.com'], ['LINKEDIN ↗', 'https://www.linkedin.com/in/trakshan-mishra-100b08206/']] },
+];
+BEINGS.forEach(b => {
+  b.isBeing = true;
+  const y = hmap(b.x, b.z);
+  if (b.crystal) {
+    const crystal = new THREE.Mesh(new THREE.OctahedronGeometry(1.5, 0), new THREE.MeshBasicMaterial({ color: b.color }));
+    crystal.position.set(b.x, y + 3.4, b.z); scene.add(crystal); b.mesh = crystal;
+    const halo = new THREE.PointLight(b.color, 40, 30); halo.position.set(b.x, y + 3, b.z); scene.add(halo);
+    const stone = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.3, 2.4, 6), new THREE.MeshLambertMaterial({ color: 0x6B5A48 }));
+    stone.position.set(b.x, y + 1.2, b.z); scene.add(stone);
+    colliders.push({ x: b.x, z: b.z, r: 1.6 });
+  } else {
+    b.mesh = standee(T[b.tex], b.x, b.z, 1.25, b.color);
+  }
+  const ringG = new THREE.RingGeometry(2.6, 3.0, 40); ringG.rotateX(-Math.PI / 2);
+  const ring = new THREE.Mesh(ringG, new THREE.MeshBasicMaterial({ color: b.color, transparent: true, opacity: 0.6 }));
+  ring.position.set(b.x, y + 0.15, b.z); scene.add(ring); b.ring = ring;
+});
+
+// ---------- SHARDS ----------
+const SHARDS = [];
+for (let i = 0; i < 9; i++) {
+  const a = (i / 9) * Math.PI * 2, r = 70 + rand(i, 70) * 80;
+  const x = Math.cos(a) * r, z = Math.sin(a) * r - 40;
+  const m = new THREE.Mesh(new THREE.TetrahedronGeometry(0.6, 0), new THREE.MeshBasicMaterial({ color: 0x6BE8A0 }));
+  m.position.set(x, hmap(x, z) + 1.1, z); scene.add(m);
+  const halo = new THREE.Mesh(new THREE.SphereGeometry(1.0, 8, 6), new THREE.MeshBasicMaterial({ color: 0x6BE8A0, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending, depthWrite: false }));
+  halo.position.copy(m.position); scene.add(halo);
+  SHARDS.push({ mesh: m, halo, x, z, taken: false });
+}
+
+// ---------- quest beam ----------
+const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 1.1, 46, 12, 1, true),
+  new THREE.MeshBasicMaterial({ color: 0xFFD75E, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false }));
+beam.position.y = 23; scene.add(beam);
+function questTarget() {
+  const id = save.tracked;
+  if (!id || save.quests[id] === 'done') return null;
+  if (id === 'beings') { let best = null, bd = 1e9; BEINGS.forEach(b => { if (save.met[b.short]) return; const d = Math.hypot(player.x - b.x, player.z - b.z); if (d < bd) { bd = d; best = b; } }); return best ? { x: best.x, z: best.z } : null; }
+  if (id === 'shards') { let best = null, bd = 1e9; SHARDS.forEach(s => { if (s.taken) return; const d = Math.hypot(player.x - s.x, player.z - s.z); if (d < bd) { bd = d; best = s; } }); return best; }
+  if (id === 'letter') return TAVERN_DOOR;
+  if (id === 'lamps') { let best = null, bd = 1e9; LAMPS.forEach(L => { if (L.lit) return; const d = Math.hypot(player.x - L.x, player.z - L.z); if (d < bd) { bd = d; best = L; } }); return best; }
+  return null;
+}
+
+// ---------- player & controls ----------
+const player = { x: 0, z: 16, yaw: 0, pitch: -0.03, vx: 0, vz: 0, hp: 100, st: 100, buffT: 0 };
+const keys = {};
+addEventListener('keydown', e => { const k = e.key.toLowerCase(); keys[k] = true; if (['arrowup','arrowdown',' '].includes(k)) e.preventDefault(); onKey(k); });
+addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+const startEl = document.getElementById('start');
+let started = false;
+const tryLock = () => { try { const p = renderer.domElement.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (e) {} };
+document.getElementById('enter').addEventListener('click', () => {
+  started = true; startEl.style.opacity = '0'; setTimeout(() => startEl.style.display = 'none', 600);
+  SFX.boot(); if (SFX.ctx && SFX.ctx.state === 'suspended') SFX.ctx.resume();
+  if (!isTouch) tryLock();
+  renderQuests();
+});
+let plFailed = false;
+renderer.domElement.addEventListener('click', () => { if (started && !isTouch && !document.pointerLockElement && !plFailed) tryLock(); });
+document.addEventListener('pointerlockerror', () => { plFailed = true; });
+let dragging = false, lastMX = 0, lastMY = 0;
+addEventListener('mousemove', e => {
+  if (document.pointerLockElement) {
+    player.yaw -= e.movementX * 0.0023;
+    player.pitch = Math.max(-1.2, Math.min(0.7, player.pitch - e.movementY * 0.0021));
+  } else if (dragging) {
+    player.yaw -= (e.clientX - lastMX) * 0.004;
+    player.pitch = Math.max(-1.2, Math.min(0.7, player.pitch - (e.clientY - lastMY) * 0.0035));
+    lastMX = e.clientX; lastMY = e.clientY;
+  }
+});
+renderer.domElement.addEventListener('mousedown', e => { dragging = true; lastMX = e.clientX; lastMY = e.clientY; });
+addEventListener('mouseup', () => dragging = false);
+const mkStick = (el, cb) => {
+  const knob = el.querySelector('.knob');
+  let id = null, cx = 0, cy = 0;
+  el.addEventListener('pointerdown', e => { id = e.pointerId; const r = el.getBoundingClientRect(); cx = r.left + r.width / 2; cy = r.top + r.height / 2; el.setPointerCapture(id); });
+  el.addEventListener('pointermove', e => { if (e.pointerId !== id) return; const dx = Math.max(-1, Math.min(1, (e.clientX - cx) / 42)), dy = Math.max(-1, Math.min(1, (e.clientY - cy) / 42)); knob.style.transform = `translate(${dx * 30}px,${dy * 30}px)`; cb(dx, dy); });
+  const end = e => { if (e.pointerId !== id) return; id = null; knob.style.transform = 'none'; cb(0, 0); };
+  el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+};
+let tMove = { x: 0, y: 0 }, tLook = { x: 0, y: 0 };
+mkStick(document.getElementById('stickL'), (x, y) => { tMove.x = x; tMove.y = y; });
+mkStick(document.getElementById('stickR'), (x, y) => { tLook.x = x; tLook.y = y; });
+
+// ---------- dialogue ----------
+const dlg = document.getElementById('dialog'), dgName = document.getElementById('dg-name'), dgText = document.getElementById('dg-text'), dgAct = document.getElementById('dg-actions'), dgPortrait = document.getElementById('dg-portrait');
+let activeB = null, lineIdx = 0, typeTimer = null;
+const typeLine = (txt) => { clearInterval(typeTimer); let i = 0; typeTimer = setInterval(() => { dgText.textContent = txt.slice(0, i += 2); if (i >= txt.length) clearInterval(typeTimer); }, 13); };
+const renderActs = b => {
+  dgAct.innerHTML = '';
+  b.acts().forEach(([label, hrefOrFn, cls]) => {
+    if (typeof hrefOrFn === 'function') { const btn = document.createElement('button'); btn.textContent = label; if (cls) btn.className = cls; btn.addEventListener('click', hrefOrFn); dgAct.appendChild(btn); }
+    else { const a = document.createElement('a'); a.textContent = label; a.href = hrefOrFn; if (!hrefOrFn.startsWith('portfolio')) a.target = '_blank'; dgAct.appendChild(a); }
+  });
+};
+const openDlg = b => {
+  activeB = b; lineIdx = 0;
+  dgName.textContent = b.name; dgName.style.color = '#' + (b.color || 0xFFC98A).toString(16).padStart(6, '0');
+  if (b.portrait) { dgPortrait.src = b.portrait; dgPortrait.style.display = 'block'; } else dgPortrait.style.display = 'none';
+  renderActs(b); typeLine(b.lines()[0]); dlg.classList.add('show'); SFX.blip();
+  if (b.isBeing && !save.met[b.short]) {
+    save.met[b.short] = 1; persist();
+    if (Object.keys(save.met).length >= 5) award(QUESTS.beings, 'beings');
+    renderQuests();
+  }
+};
+const refreshDlgRef = { fn: () => {} };
+refreshDlgRef.fn = () => { if (activeB) { renderActs(activeB); const L = activeB.lines(); typeLine(L[Math.min(lineIdx, L.length - 1)]); renderQuests(); } };
+const refreshDlg = () => refreshDlgRef.fn();
+const closeDlg = () => { activeB = null; dlg.classList.remove('show'); };
+dlg.addEventListener('click', e => { if (activeB && e.target.tagName !== 'BUTTON' && e.target.tagName !== 'A') { const L = activeB.lines(); lineIdx = (lineIdx + 1) % L.length; typeLine(L[lineIdx]); } });
+
+// ---------- TAVERN INTERIOR ----------
+const tavernEl = document.getElementById('tavern'), tvText = document.getElementById('tv-text'), tvActs = document.getElementById('tv-actions'), mugWrap = document.getElementById('mug-wrap');
+let inTavern = false, tvTimer = null;
+const tvType = (txt) => { clearInterval(tvTimer); let i = 0; tvTimer = setInterval(() => { tvText.textContent = txt.slice(0, i += 2); if (i >= txt.length) clearInterval(tvTimer); }, 13); };
+function renderTavern() {
+  tvActs.innerHTML = '';
+  const mk = (label, fn, cls) => { const b = document.createElement('button'); b.textContent = label; if (cls) b.className = cls; b.addEventListener('click', fn); tvActs.appendChild(b); };
+  if (save.quests.letter === 'active') mk('DELIVER THE LETTER', () => { award(QUESTS.letter, 'letter'); tvType('The Elder\u2019s hand… ha! He still owes me for the winter ale. Here — your courier\u2019s fee, traveler.'); renderTavern(); }, 'gold');
+  mk('ORDER A DRINK · ◈5', () => {
+    if (save.tokens < 5) return toast('NOT ENOUGH TOKENS');
+    setTokens(save.tokens - 5); save.drinks++; persist();
+    mugWrap.style.display = 'block'; mugWrap.classList.remove('pour'); void mugWrap.offsetWidth; mugWrap.classList.add('pour');
+    SFX.gulp();
+    setTimeout(() => { mugWrap.style.display = 'none'; player.st = 100; player.buffT = 60; toast('🍺 TAVERN WARMTH — stamina full, speed up 60s'); }, 1500);
+    tvType('One honeyed ale, coming up. Careful — it makes the road home feel shorter than it is.');
+  });
+  mk('LEAVE', exitTavern);
+}
+function enterTavern() {
+  inTavern = true; tavernEl.style.display = 'block';
+  tvType(save.quests.letter === 'active' ? 'Well now — a new face, and carrying paper with the Elder\u2019s seal, unless my eyes lie.' : 'Welcome to the hearth, traveler. Sit. The ale\u2019s honeyed and the stories are free.');
+  renderTavern(); SFX.buy();
+  if (document.pointerLockElement) document.exitPointerLock();
+}
+function exitTavern() { inTavern = false; tavernEl.style.display = 'none'; SFX.blip(); }
+
+const onKey = k => {
+  if (inTavern) { if (k === 'q' || k === 'escape' || k === 'e') exitTavern(); return; }
+  if (k === 'e') {
+    // tavern door
+    if (Math.hypot(player.x - TAVERN_DOOR.x, player.z - TAVERN_DOOR.z) < 3.4) return enterTavern();
+    if (activeB) { const L = activeB.lines(); lineIdx = (lineIdx + 1) % L.length; typeLine(L[lineIdx]); SFX.blip(); return; }
+    // lamps
+    LAMPS.forEach(L => {
+      if (L.lit || save.quests.lamps !== 'active') return;
+      if (Math.hypot(player.x - L.x, player.z - L.z) < 3.5) {
+        L.lit = true; save.lamps++; persist(); renderQuests(); SFX.pickup();
+        toast('🕯 LAMP LIT ' + save.lamps + '/4');
+        if (save.lamps >= 4) award(QUESTS.lamps, 'lamps');
+      }
+    });
+  }
+  if (k === 'q') closeDlg();
+};
+
+// ---------- COMPASS ----------
+const compassEl = document.getElementById('compass');
+const qarrow = document.getElementById('qarrow'), trackdEl = document.getElementById('trackd');
+const POI = [
+  ...BEINGS.map(b => ({ short: b.short, x: b.x, z: b.z, color: '#' + b.color.toString(16).padStart(6, '0') })),
+  { short: 'Village', x: 0, z: 0, color: '#FFC98A' },
+  { short: 'Tavern', x: -4, z: 30, color: '#FF9A6B' },
+];
+const ticks = POI.map(p => {
+  const d = document.createElement('div'); d.className = 'tick mono';
+  d.innerHTML = p.short.toUpperCase() + '<div class="pip" style="background:' + p.color + '"></div>';
+  compassEl.appendChild(d); return d;
+});
+const mm = document.getElementById('minimap'), mmx = mm.getContext('2d');
+const velEl = document.getElementById('vel-n'), nearN = document.getElementById('near-n'), nearD = document.getElementById('near-d');
+const hpF = document.getElementById('hp-f'), stF = document.getElementById('st-f'), interactEl = document.getElementById('interact'), buffEl = document.getElementById('buff');
+
+// ---------- loop ----------
+const clock = new THREE.Clock();
+let t = 0, stepAcc = 0;
+let dayT = CYCLE * 0.5; // start at dusk
+const INTERACT = [...NPCS, ...BEINGS];
+renderQuests();
+function loop() {
+  requestAnimationFrame(loop);
+  const dt = Math.min(0.05, clock.getDelta()); t += dt;
+  dayT = (dayT + dt) % CYCLE;
+  applyCycle(dayT / CYCLE);
+  // lamps/windows react to time of day
+  const lampGlow = Math.min(1, Math.max(0, nightness * 1.4));
+  LAMPS.forEach(L => { L.light.intensity = L.lit ? 14 * Math.max(lampGlow, 0.15) : 0; });
+  windowMats.forEach(m => m.color.setHex(lampGlow > 0.3 ? 0xFFD9A0 : 0x554433));
+  flies.material.opacity = 0.9 * lampGlow;
+  if (window.__water) window.__water.color.setHex(nightness > 0.7 ? 0x1E3448 : 0x2E4E66);
+
+  if (!inTavern) {
+    let fx = 0, fz = 0;
+    if (keys.w || keys.arrowup) fz += 1; if (keys.s || keys.arrowdown) fz -= 1;
+    if (keys.a || keys.arrowleft) fx -= 1; if (keys.d || keys.arrowright) fx += 1;
+    fz += -tMove.y; fx += tMove.x;
+    player.yaw -= tLook.x * dt * 2.2; player.pitch = Math.max(-1.2, Math.min(0.7, player.pitch - tLook.y * dt * 1.6));
+    const l = Math.hypot(fx, fz); if (l > 1) { fx /= l; fz /= l; }
+    const wantSprint = keys.shift && l > 0;
+    const sprinting = wantSprint && player.st > 4;
+    player.st = Math.max(0, Math.min(100, player.st + (sprinting ? -20 : 14) * dt));
+    if (player.buffT > 0) player.buffT -= dt;
+    buffEl.style.opacity = player.buffT > 0 ? '1' : '0';
+    const run = (sprinting ? 2.1 : 1) * (save.elixirs.swift ? 1.35 : 1) * (player.buffT > 0 ? 1.2 : 1);
+    const SP = 9.5 * run;
+    const dirX = Math.sin(player.yaw), dirZ = Math.cos(player.yaw);
+    player.vx += ((-dirX * fz + dirZ * fx) * SP - player.vx) * Math.min(1, dt * 8);
+    player.vz += ((-dirZ * fz - dirX * fx) * SP - player.vz) * Math.min(1, dt * 8);
+    let nx = Math.max(-225, Math.min(225, player.x + player.vx * dt));
+    let nz = Math.max(-225, Math.min(225, player.z + player.vz * dt));
+    colliders.forEach(c => {
+      const dx = nx - c.x, dz = nz - c.z, d = Math.hypot(dx, dz), rr = c.r + 0.6;
+      if (d < rr && d > 0.001) {
+        const ux = dx / d, uz = dz / d;
+        nx = c.x + ux * rr; nz = c.z + uz * rr;
+        const dot = player.vx * ux + player.vz * uz;
+        if (dot < 0) { player.vx -= dot * ux; player.vz -= dot * uz; }
+      }
+    });
+    player.x = nx; player.z = nz;
+    const spd = Math.hypot(player.vx, player.vz);
+    velEl.textContent = Math.round(spd * 4);
+    hpF.style.width = player.hp + '%';
+    stF.style.width = player.st + '%';
+    if (spd > 2) { stepAcc += dt * (sprinting ? 3.4 : 2.2); if (stepAcc > 1) { stepAcc = 0; SFX.step(); } }
+    const headBob = started && spd > 1 ? Math.sin(t * (sprinting ? 13 : 9)) * 0.06 * Math.min(1, spd / 6) : 0;
+    camera.position.set(player.x, hmap(player.x, player.z) + 1.75 + headBob, player.z);
+    camera.rotation.order = 'YXZ';
+    camera.rotation.y = player.yaw; camera.rotation.x = player.pitch;
+  }
+  // standees face the camera (yaw only)
+  NPCS.forEach(n => { n.mesh.rotation.y = Math.atan2(camera.position.x - n.mesh.position.x, camera.position.z - n.mesh.position.z); });
+  BEINGS.forEach(b => {
+    if (b.crystal) { b.mesh.rotation.y = t * 0.8; b.mesh.position.y = hmap(b.x, b.z) + 3.4 + Math.sin(t * 1.4 + b.x) * 0.25; }
+    else b.mesh.rotation.y = Math.atan2(camera.position.x - b.x, camera.position.z - b.z);
+    const s = 1 + Math.sin(t * 2 + b.z) * 0.06; b.ring.scale.set(s, s, s);
+  });
+  // shards
+  SHARDS.forEach(s => {
+    if (s.taken) return;
+    s.mesh.rotation.y = t * 2; s.mesh.position.y = hmap(s.x, s.z) + 1.1 + Math.sin(t * 2.4 + s.x) * 0.2;
+    s.halo.position.copy(s.mesh.position);
+    if (!inTavern && Math.hypot(player.x - s.x, player.z - s.z) < 2.6) {
+      s.taken = true; s.mesh.visible = false; s.halo.visible = false;
+      save.shards++; persist(); renderQuests(); SFX.pickup();
+      toast('✦ GLOW-SHARD ' + Math.min(5, save.shards) + '/5');
+    }
+  });
+  // nearest interactable
+  let bestO = null, bd = 1e9;
+  INTERACT.forEach(o => {
+    const d = Math.hypot(player.x - o.mesh.position.x, player.z - o.mesh.position.z);
+    if (d < bd) { bd = d; bestO = o; }
+  });
+  nearN.textContent = bestO.short; nearD.textContent = Math.round(bd) + ' m';
+  if (!inTavern && bd < 6 && activeB !== bestO) openDlg(bestO);
+  if ((bd > 9 || inTavern) && activeB) closeDlg();
+  // interact prompt
+  let promptNear = false;
+  if (Math.hypot(player.x - TAVERN_DOOR.x, player.z - TAVERN_DOOR.z) < 3.4) promptNear = true;
+  if (save.quests.lamps === 'active') LAMPS.forEach(L => { if (!L.lit && Math.hypot(player.x - L.x, player.z - L.z) < 3.5) promptNear = true; });
+  interactEl.style.opacity = promptNear && !inTavern ? '1' : '0';
+  // quest beam + tracked arrow
+  const tgt = questTarget();
+  const cw = compassEl.clientWidth;
+  if (tgt) {
+    beam.visible = true;
+    beam.position.x = tgt.x; beam.position.z = tgt.z; beam.position.y = hmap(tgt.x, tgt.z) + 23;
+    beam.material.opacity = 0.16 + 0.08 * Math.sin(t * 3);
+    beam.rotation.y = t * 0.4;
+    let ang = Math.atan2(-(tgt.x - player.x), -(tgt.z - player.z)) - player.yaw;
+    while (ang > Math.PI) ang -= Math.PI * 2; while (ang < -Math.PI) ang += Math.PI * 2;
+    const clamped = Math.max(-1.1, Math.min(1.1, ang));
+    qarrow.style.display = 'block';
+    qarrow.style.left = (cw / 2 - clamped / 1.1 * (cw / 2)) + 'px';
+    qarrow.style.opacity = Math.abs(ang) > 1.1 ? '0.45' : '1';
+    trackdEl.textContent = '◎ ' + Math.round(Math.hypot(player.x - tgt.x, player.z - tgt.z)) + 'm';
+  } else { beam.visible = false; qarrow.style.display = 'none'; trackdEl.textContent = ''; }
+  // compass ticks
+  POI.forEach((p, i) => {
+    let ang = Math.atan2(-(p.x - player.x), -(p.z - player.z)) - player.yaw;
+    while (ang > Math.PI) ang -= Math.PI * 2; while (ang < -Math.PI) ang += Math.PI * 2;
+    const vis = Math.abs(ang) < 1.1;
+    ticks[i].style.display = vis ? 'block' : 'none';
+    if (vis) ticks[i].style.left = (cw / 2 - ang / 1.1 * (cw / 2)) + 'px';
+  });
+  // minimap
+  mmx.clearRect(0, 0, 300, 300);
+  mmx.save(); mmx.translate(150, 150);
+  const S = 0.62;
+  mmx.rotate(-player.yaw);
+  POI.forEach(p => { const dx = (p.x - player.x) * S, dz = (p.z - player.z) * S; if (Math.hypot(dx, dz) < 138) { mmx.beginPath(); mmx.arc(dx, dz, 4, 0, 6.29); mmx.fillStyle = p.color; mmx.fill(); } });
+  SHARDS.forEach(s => { if (s.taken) return; const dx = (s.x - player.x) * S, dz = (s.z - player.z) * S; if (Math.hypot(dx, dz) < 138) { mmx.fillStyle = '#6BE8A0'; mmx.fillRect(dx - 1.5, dz - 1.5, 3, 3); } });
+  if (tgt) { const dx = (tgt.x - player.x) * S, dz = (tgt.z - player.z) * S; const dd = Math.hypot(dx, dz); const cx = dd > 132 ? dx / dd * 132 : dx, cz = dd > 132 ? dz / dd * 132 : dz; mmx.beginPath(); mmx.arc(cx, cz, 6, 0, 6.29); mmx.strokeStyle = '#FFD75E'; mmx.lineWidth = 2; mmx.stroke(); }
+  mmx.restore();
+  mmx.fillStyle = '#F2ECDF'; mmx.beginPath(); mmx.moveTo(150, 142); mmx.lineTo(145, 155); mmx.lineTo(155, 155); mmx.closePath(); mmx.fill();
+  // ambience
+  if (window.__flame) { window.__flame.scale.y = 1 + Math.sin(t * 9) * 0.16; window.__fire.intensity = (46 + Math.sin(t * 7) * 10) * Math.max(0.3, lampGlow); }
+  const fp = flies.geometry.attributes.position, seed = flies.userData.seed;
+  for (let i = 0; i < seed.length; i++) {
+    fp.setY(i, fp.getY(i) + Math.sin(t * 1.3 + seed[i]) * 0.008);
+    fp.setX(i, fp.getX(i) + Math.cos(t * 0.7 + seed[i]) * 0.006);
+  }
+  fp.needsUpdate = true;
+  renderer.render(scene, camera);
+}
+loop();
+addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+</script>
+</body>
+</html>
