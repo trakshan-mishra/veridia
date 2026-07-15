@@ -1,0 +1,7 @@
+# dev-only artifacts (not part of the deployed site)
+.claude/
+_*.html
+*.bak
+.env
+.DS_Store
+node_modules/

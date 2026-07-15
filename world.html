@@ -1,0 +1,2071 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Veridia — Trakshan Mishra</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; overflow:hidden; background:#1A1512; }
+  body { font-family:'Geist', sans-serif; color:#F2ECDF; }
+  a { color:#FFC98A; text-decoration:none; }
+  canvas.gl { display:block; }
+  .mono { font-family:'JetBrains Mono', monospace; }
+  #hud { position:fixed; inset:0; pointer-events:none; z-index:5; }
+  #compass { position:absolute; top:18px; left:50%; transform:translateX(-50%); width:min(520px, 72vw); height:46px; overflow:hidden;
+    -webkit-mask:linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent); mask:linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent); }
+  #compass .tick { position:absolute; top:0; font-size:10px; letter-spacing:0.1em; color:rgba(242,236,223,0.75); transform:translateX(-50%); text-align:center; text-shadow:0 1px 4px rgba(0,0,0,0.8); }
+  #compass .tick .pip { width:5px; height:5px; border-radius:50%; margin:3px auto 0; }
+  #compass .btick { position:absolute; top:2px; transform:translateX(-50%); text-align:center; }
+  #compass .btick .card { display:block; font-size:11px; font-weight:700; letter-spacing:0.08em; color:#F2ECDF; text-shadow:0 1px 4px rgba(0,0,0,0.9); }
+  #compass .btick .bar { width:1px; height:7px; margin:2px auto 0; background:rgba(242,236,223,0.45); }
+  #compass .btick .bar.big { height:11px; width:2px; background:rgba(242,236,223,0.85); }
+  #compass .qmark { position:absolute; top:26px; transform:translateX(-50%); font-size:12px; color:#FFD75E; text-shadow:0 0 8px rgba(255,215,94,0.9); }
+  #compass .center { position:absolute; left:50%; top:24px; width:1px; height:12px; background:#FFC98A; }
+  #hdg { position:absolute; top:64px; left:50%; transform:translateX(-50%); font-size:11px; letter-spacing:0.14em; color:rgba(242,236,223,0.8); text-shadow:0 1px 4px rgba(0,0,0,0.8); }
+  #obj-line { position:absolute; top:82px; left:50%; transform:translateX(-50%); font-size:11px; letter-spacing:0.18em; color:#FFD75E; text-shadow:0 1px 4px rgba(0,0,0,0.8); white-space:nowrap; }
+  #toast { position:absolute; top:104px; left:50%; transform:translateX(-50%); font-size:13px; letter-spacing:0.12em; color:#FFC98A; background:rgba(24,18,13,0.85); border:1px solid rgba(255,201,138,0.4); border-radius:999px; padding:9px 20px; opacity:0; transition:opacity .3s; white-space:nowrap; z-index:7; }
+  #vitals { position:absolute; left:26px; bottom:26px; width:212px; }
+  #vitals .vrow { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+  #vitals .vlab { font-size:9px; letter-spacing:0.2em; color:rgba(242,236,223,0.6); width:60px; }
+  #vitals .vbar { flex:1; height:9px; border-radius:6px; background:rgba(20,16,12,0.6); border:1px solid rgba(242,236,223,0.18); overflow:hidden; }
+  #vitals .vbar > div { height:100%; border-radius:6px; transition:width .18s; }
+  #hp-f { width:100%; background:linear-gradient(90deg,#E86A5A,#FF9A6B); }
+  #st-f { width:100%; background:linear-gradient(90deg,#6BC48A,#B8E86B); }
+  #tok-hud { font-size:12px; color:#FFC98A; margin-top:9px; letter-spacing:0.1em; }
+  #tok-hud b { color:#FFD75E; }
+  #qlog { position:absolute; left:26px; top:120px; width:252px; max-height:52vh; overflow:hidden; }
+  #qlog .qlab { font-size:10px; letter-spacing:0.28em; color:rgba(242,236,223,0.5); margin-bottom:7px; }
+  #qlist .qitem { font-size:11.5px; line-height:1.38; color:rgba(242,236,223,0.9); background:rgba(24,18,13,0.55); backdrop-filter:blur(4px); border-left:2px solid #FFC98A; border-radius:5px; padding:6px 9px; margin-bottom:6px; }
+  #qlist .qitem.char { border-left-color:#B8E86B; }
+  #qlist .qitem b { color:#FFD75E; }
+  #qlist .qempty { font-size:11px; color:rgba(242,236,223,0.4); font-style:italic; }
+  #interact { position:absolute; left:50%; bottom:180px; transform:translateX(-50%); font-size:12px; letter-spacing:0.2em; color:#1A120C; background:#FFC98A; border-radius:999px; padding:8px 18px; opacity:0; transition:opacity .25s; }
+  #dialog { position:absolute; left:50%; bottom:64px; transform:translateX(-50%) translateY(12px); width:720px; max-width:calc(100vw - 48px);
+    background:rgba(26,19,13,0.88); backdrop-filter:blur(12px); border:1px solid rgba(255,201,138,0.3); border-radius:12px; padding:18px 22px;
+    opacity:0; transition:opacity .3s ease, transform .3s ease; pointer-events:none; display:flex; gap:18px; align-items:flex-start; }
+  #dialog.show { opacity:1; transform:translateX(-50%) translateY(0); pointer-events:auto; }
+  #dg-main { flex:1; min-width:0; }
+  #dg-name { font-size:12px; letter-spacing:0.3em; color:#FFC98A; margin-bottom:8px; }
+  #dg-text { font-size:16.5px; line-height:1.55; color:#F6EFE2; min-height:50px; }
+  #dg-foot { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:12px; font-size:11px; letter-spacing:0.14em; color:rgba(242,236,223,0.45); flex-wrap:wrap; }
+  #dg-actions { display:flex; gap:10px; flex-wrap:wrap; }
+  #dg-actions a, #dg-actions button { pointer-events:auto; font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.1em; color:#FFC98A; background:rgba(255,201,138,0.1); border:1px solid rgba(255,201,138,0.35); border-radius:6px; padding:7px 13px; cursor:pointer; }
+  #dg-actions .gold { color:#B8E86B; border-color:rgba(184,232,107,0.4); background:rgba(184,232,107,0.08); }
+  #dg-tok { color:#FFC98A; }
+  #start { position:fixed; inset:0; z-index:10; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; background:radial-gradient(120% 90% at 50% 70%, rgba(60,32,16,0.5), rgba(16,10,7,0.94)); cursor:pointer; transition:opacity .6s ease; }
+  #start .sigil { width:130px; height:130px; border-radius:50%; border:2px solid rgba(255,201,138,0.5); box-shadow:0 0 40px rgba(255,178,94,0.3); display:grid; place-items:center; font-size:54px; color:#FFC98A; background:radial-gradient(circle,rgba(255,201,138,.2),rgba(46,26,15,.5)); }
+  #start .kick { font-size:11px; letter-spacing:0.4em; color:#FFC98A; }
+  #start h1 { font-weight:300; font-size:clamp(32px,5.6vw,58px); letter-spacing:0.06em; color:#FBF3E4; }
+  #start p { font-size:13px; color:rgba(242,236,223,0.65); letter-spacing:0.1em; text-align:center; padding:0 20px; line-height:1.7; }
+  #start .btn { margin-top:8px; font-family:'JetBrains Mono',monospace; font-size:13px; letter-spacing:0.2em; color:#1A120C; background:#FFC98A; border:none; border-radius:999px; padding:15px 36px; cursor:pointer; }
+  #mute { position:absolute; top:20px; left:30px; pointer-events:auto; z-index:6; font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.18em; color:rgba(242,236,223,0.6); background:rgba(24,18,13,0.5); border:1px solid rgba(242,236,223,0.2); border-radius:999px; padding:7px 14px; cursor:pointer; }
+  /* tavern interior */
+  #tavern { position:fixed; inset:0; z-index:9; display:none; background:#0C0805; }
+  #tavern .bg { position:absolute; inset:0; background:url('assets/tavern_interior.png') center/cover; }
+  #tavern .veil { position:absolute; inset:0; background:radial-gradient(90% 80% at 50% 60%, transparent, rgba(8,5,3,0.55)); }
+  #tv-bar { position:absolute; left:50%; bottom:48px; transform:translateX(-50%); width:720px; max-width:calc(100vw - 40px); background:rgba(20,13,8,0.9); backdrop-filter:blur(10px); border:1px solid rgba(255,201,138,0.35); border-radius:14px; padding:20px 24px; display:flex; gap:20px; align-items:flex-start; }
+  #tv-text { font-size:16px; line-height:1.55; color:#F6EFE2; min-height:48px; }
+  #tv-name { font-size:12px; letter-spacing:0.3em; color:#FFC98A; margin-bottom:8px; }
+  #tv-actions { display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; }
+  #tv-actions button { font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.1em; color:#FFC98A; background:rgba(255,201,138,0.1); border:1px solid rgba(255,201,138,0.35); border-radius:6px; padding:8px 14px; cursor:pointer; }
+  #tv-actions .gold { color:#B8E86B; border-color:rgba(184,232,107,0.4); }
+  #mug-wrap { position:absolute; left:50%; top:38%; transform:translate(-50%,-50%); width:180px; height:180px; display:none; }
+  #mug-wrap img { width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 10px 30px rgba(0,0,0,0.6)); }
+  @keyframes mugpour { 0%{clip-path:inset(100% 0 0 0);} 100%{clip-path:inset(0 0 0 0);} }
+  #mug-wrap.pour img { animation:mugpour 1.4s ease forwards; }
+  .stick { position:absolute; bottom:96px; width:112px; height:112px; border-radius:50%; border:1px solid rgba(242,236,223,0.25); background:rgba(24,18,13,0.4); backdrop-filter:blur(6px); display:none; align-items:center; justify-content:center; pointer-events:auto; touch-action:none; z-index:6; }
+  .stick .knob { width:44px; height:44px; border-radius:50%; background:rgba(255,201,138,0.8); }
+  #stickL { left:26px; } #stickR { right:26px; }
+  #stickR .knob { background:rgba(242,236,223,0.4); }
+  @media (pointer:coarse) { .stick { display:flex; } #dialog { bottom:236px; } }
+  @media (max-width:720px) { #compass { width:60vw; } }
+</style>
+</head>
+<body>
+<div id="start">
+  <div class="sigil" aria-hidden="true">◈</div>
+  <div class="kick mono">TRAKSHAN MISHRA · OPEN-WORLD PORTFOLIO</div>
+  <h1>V E R I D I A</h1>
+  <p class="mono">a wanderer arrives in the vale of Veridia — gather, scout, trade, and claim ground<br>earn tokens at the notice board, spend them at the stall, and hear what the builder made</p>
+  <button class="btn mono" id="enter">▶ &nbsp;BEGIN</button>
+  <p class="mono" style="opacity:.5">WASD walk · mouse look · SHIFT sprint · SPACE jump · E talk / gather / claim · 1-9 options · Q close</p>
+</div>
+<div id="tavern">
+  <div class="bg"></div><div class="veil"></div>
+  <div id="mug-wrap"><img src="assets/prop_drink_mug.png" alt=""></div>
+  <div id="tv-bar">
+    <div style="flex:1;min-width:0;">
+      <div id="tv-name" class="mono">RHEA · BARTENDER</div>
+      <div id="tv-text">—</div>
+      <div id="tv-actions"></div>
+    </div>
+  </div>
+</div>
+<div id="hud">
+  <button id="mute" class="mono">♪ SOUND ON</button>
+  <div id="compass"><div class="center"></div></div>
+  <div id="hdg" class="mono">0°</div>
+  <div id="obj-line" class="mono"></div>
+  <div id="qlog"><div class="qlab mono">QUESTS &middot; PRESS J FOR BOARD ROUTE</div><div id="qlist"></div></div>
+  <div id="vitals">
+    <div class="vrow"><span class="vlab mono">VIGOR</span><div class="vbar"><div id="hp-f"></div></div></div>
+    <div class="vrow"><span class="vlab mono">STAMINA</span><div class="vbar"><div id="st-f"></div></div></div>
+    <div id="tok-hud" class="mono">◈ <b id="tok-n">0</b> &nbsp;·&nbsp; ✦ LV <span id="lv-n">1</span></div>
+  </div>
+  <div id="toast" class="mono"></div>
+  <div id="interact" class="mono">E · INTERACT</div>
+  <div id="dialog">
+    <div id="dg-main">
+      <div id="dg-name" class="mono">—</div>
+      <div id="dg-text">—</div>
+      <div id="dg-foot" class="mono"><span>[E] MORE · [1-9] OPTIONS · [Q] CLOSE</span><span id="dg-tok">◈ 0</span><span id="dg-actions"></span></div>
+    </div>
+  </div>
+  <div id="stickL" class="stick"><div class="knob"></div></div>
+  <div id="stickR" class="stick"><div class="knob"></div></div>
+</div>
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from './vendor/three.module.js';
+import { GLTFLoader } from './vendor/GLTFLoader.js';
+
+const isTouch = matchMedia('(pointer: coarse)').matches;
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(1);
+renderer.setSize(innerWidth, innerHeight);
+renderer.domElement.className = 'gl';
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.12;
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x63452E, 0.008);
+const camera = new THREE.PerspectiveCamera(68, innerWidth / innerHeight, 0.1, 380);
+
+// ---------- save ----------
+let save = { tokens: 0, quests: {}, elixirs: {}, shards: 0, met: {}, lamps: 0, drinks: 0,
+  inv: {}, qstate: {}, claimed: {}, xp: 0, gear: {} };
+// Fresh start every visit: progress is intentionally NOT restored across refreshes.
+try { localStorage.removeItem('veridia-save5'); localStorage.removeItem('veridia-save4'); } catch (e) {}
+if (!save.inv) save.inv = {}; if (!save.qstate) save.qstate = {}; if (!save.claimed) save.claimed = {}; if (!save.gear) save.gear = {};
+const persist = () => {};   // progress lives only for the current session (resets on refresh)
+
+// ---------- textures ----------
+const TL = new THREE.TextureLoader();
+const tex = (u, rx, ry) => { const t = TL.load(u); t.colorSpace = THREE.SRGBColorSpace; if (rx) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rx, ry || rx); } return t; };
+// The bundled ground PNGs are baked *pictures* (vignettes, painted path edges), not
+// tileable materials — so all ground surfaces use procedural canvas textures instead.
+function canvasTex(size, painter, repeat) {
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  painter(c.getContext('2d'), size);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  if (repeat) t.repeat.set(repeat, repeat);
+  t.anisotropy = 8;
+  return t;
+}
+// draw wrapped so the tile has no seams
+function wrapDot(ctx, S, x, y, r, fill) {
+  ctx.fillStyle = fill;
+  [-S, 0, S].forEach(dx => [-S, 0, S].forEach(dy => {
+    ctx.beginPath(); ctx.ellipse(x + dx, y + dy, r, r * (0.6 + Math.random() * 0.8), Math.random() * 3.2, 0, 6.29); ctx.fill();
+  }));
+}
+function paintGrass(ctx, S) {
+  ctx.fillStyle = '#466030'; ctx.fillRect(0, 0, S, S);
+  // large meadow patches — these survive mipmapping so distant ground stays alive
+  for (let i = 0; i < 46; i++) {
+    const g = 80 + Math.random() * 55;
+    wrapDot(ctx, S, Math.random() * S, Math.random() * S, 36 + Math.random() * 70, `rgba(${g * 0.62|0},${g|0},${g * 0.36|0},0.3)`);
+  }
+  for (let i = 0; i < 300; i++) {
+    const g = 78 + Math.random() * 52;
+    wrapDot(ctx, S, Math.random() * S, Math.random() * S, 8 + Math.random() * 26, `rgba(${g * 0.6|0},${g|0},${g * 0.34|0},0.26)`);
+  }
+  for (let i = 0; i < 2600; i++) {
+    const light = Math.random() < 0.5;
+    const g = light ? 125 + Math.random() * 55 : 48 + Math.random() * 28;
+    wrapDot(ctx, S, Math.random() * S, Math.random() * S, 0.6 + Math.random() * 1.8, `rgba(${g * 0.6|0},${g|0},${g * 0.32|0},0.6)`);
+  }
+}
+function paintDirt(ctx, S) {
+  ctx.fillStyle = '#8a6f4b'; ctx.fillRect(0, 0, S, S);
+  for (let i = 0; i < 200; i++) {
+    const v = 95 + Math.random() * 55;
+    wrapDot(ctx, S, Math.random() * S, Math.random() * S, 10 + Math.random() * 34, `rgba(${v|0},${v * 0.78|0},${v * 0.52|0},0.16)`);
+  }
+  for (let i = 0; i < 900; i++) {
+    const v = 60 + Math.random() * 120;
+    wrapDot(ctx, S, Math.random() * S, Math.random() * S, 0.7 + Math.random() * 2.2, `rgba(${v|0},${v * 0.82|0},${v * 0.6|0},0.45)`);
+  }
+}
+function paintCobble(ctx, S) {
+  ctx.fillStyle = '#4c443c'; ctx.fillRect(0, 0, S, S); // mortar
+  const n = 8, cell = S / n;
+  for (let row = 0; row < n; row++) {
+    for (let col = 0; col < n; col++) {
+      const v = 118 + Math.random() * 46;
+      const x = col * cell + cell * 0.5 + (Math.random() - 0.5) * 3;
+      const y = row * cell + cell * 0.5 + (Math.random() - 0.5) * 3;
+      const w = cell * (0.82 + Math.random() * 0.1), h = cell * (0.8 + Math.random() * 0.1);
+      const grad = ctx.createRadialGradient(x - w * 0.2, y - h * 0.25, 2, x, y, w * 0.75);
+      grad.addColorStop(0, `rgb(${v + 18|0},${v * 0.97 + 12|0},${v * 0.9 + 6|0})`);
+      grad.addColorStop(1, `rgb(${v * 0.72|0},${v * 0.7|0},${v * 0.64|0})`);
+      ctx.fillStyle = grad;
+      [-S, 0, S].forEach(dx => [-S, 0, S].forEach(dy => {
+        ctx.beginPath(); ctx.roundRect(x - w / 2 + dx, y - h / 2 + dy, w, h, cell * 0.28); ctx.fill();
+      }));
+    }
+  }
+  for (let i = 0; i < 380; i++) {
+    const v = 70 + Math.random() * 110;
+    wrapDot(ctx, S, Math.random() * S, Math.random() * S, 0.5 + Math.random() * 1.4, `rgba(${v|0},${v|0},${v * 0.94|0},0.25)`);
+  }
+}
+function paintWater(ctx, S) {
+  ctx.fillStyle = '#2e5068'; ctx.fillRect(0, 0, S, S);
+  for (let i = 0; i < 160; i++) {
+    const v = 88 + Math.random() * 70;
+    wrapDot(ctx, S, Math.random() * S, Math.random() * S, 6 + Math.random() * 26, `rgba(${v * 0.55|0},${v * 0.85|0},${v|0},0.12)`);
+  }
+}
+const T = {
+  grass: canvasTex(512, paintGrass, 90),
+  cobble: canvasTex(512, paintCobble, 9),
+  dirt: canvasTex(256, paintDirt, 1),
+  water: canvasTex(256, paintWater, 24),
+  skySunrise: tex('assets/sky_sunrise_gradient.png'), skyDusk: tex('assets/sky_dusk_gradient.png'), skyNight: tex('assets/sky_night_gradient.png'),
+};
+
+// ---------- SOUND ----------
+const SFX = {
+  ctx: null, master: null, on: true,
+  boot() {
+    if (this.ctx) return;
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    this.ctx = new AC();
+    this.master = this.ctx.createGain(); this.master.gain.value = 0.5; this.master.connect(this.ctx.destination);
+    const lp = this.ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 620; lp.connect(this.master);
+    const pad = this.ctx.createGain(); pad.gain.value = 0.05; pad.connect(lp);
+    [110, 165, 220, 221.5].forEach(f => { const o = this.ctx.createOscillator(); o.type = 'sine'; o.frequency.value = f; const g = this.ctx.createGain(); g.gain.value = f > 200 ? 0.35 : 0.6; o.connect(g); g.connect(pad); o.start(); });
+    const lfo = this.ctx.createOscillator(); lfo.frequency.value = 0.05; const lg = this.ctx.createGain(); lg.gain.value = 200; lfo.connect(lg); lg.connect(lp.frequency); lfo.start();
+    // birds by day, crickets by night
+    setInterval(() => { if (!this.on || document.hidden) return; if (window.__night > 0.6) { if (Math.random() < 0.7) this.cricket(); } else if (Math.random() < 0.6) this.chirp(); }, 1700);
+    // ---- natural ambience: looping shaped noise ----
+    const nb = this.ctx.createBuffer(1, this.ctx.sampleRate * 2, this.ctx.sampleRate);
+    const nd = nb.getChannelData(0);
+    for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+    const mkLoop = (type, freq, q) => {
+      const src = this.ctx.createBufferSource(); src.buffer = nb; src.loop = true;
+      const f = this.ctx.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q || 0.8;
+      const g = this.ctx.createGain(); g.gain.value = 0;
+      src.connect(f); f.connect(g); g.connect(this.master); src.start();
+      return g;
+    };
+    this.windG = mkLoop('lowpass', 420);
+    this.waterG = mkLoop('bandpass', 760, 1.1);
+    this.humO = this.ctx.createOscillator(); this.humO.type = 'sine'; this.humO.frequency.value = 88;
+    this.humG = this.ctx.createGain(); this.humG.gain.value = 0;
+    this.humO.connect(this.humG); this.humG.connect(this.master); this.humO.start();
+    // fire crackle pops
+    setInterval(() => {
+      if (!this.on || document.hidden || !this.fireNear || Math.random() > 0.55) return;
+      const b = this.ctx.createBuffer(1, 400, this.ctx.sampleRate); const d = b.getChannelData(0);
+      for (let i = 0; i < 400; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / 400) ** 2;
+      const s = this.ctx.createBufferSource(); s.buffer = b;
+      const f = this.ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 1400 + Math.random() * 1800;
+      const g = this.ctx.createGain(); g.gain.value = 0.1 * this.fireNear;
+      s.connect(f); f.connect(g); g.connect(this.master); s.start();
+    }, 110);
+  },
+  setAmbient(wind, water, fire, hum) {
+    if (!this.ctx) return;
+    const tc = 0.4, now = this.ctx.currentTime;
+    this.windG && this.windG.gain.setTargetAtTime(this.on ? wind : 0, now, tc);
+    this.waterG && this.waterG.gain.setTargetAtTime(this.on ? water : 0, now, tc);
+    this.humG && this.humG.gain.setTargetAtTime(this.on ? hum : 0, now, tc);
+    this.fireNear = fire;
+  },
+  cricket() { const f = 4300 + Math.random() * 500; this.tone(f, 0.01, 0.05, 0.014); setTimeout(() => this.tone(f, 0.01, 0.05, 0.012), 70); setTimeout(() => this.tone(f, 0.01, 0.05, 0.01), 140); },
+  env(g, a, d, peak) { const t = this.ctx.currentTime; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(peak, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + a + d); },
+  tone(f, a, d, peak, type) { if (!this.ctx || !this.on) return; const o = this.ctx.createOscillator(); o.type = type || 'sine'; o.frequency.value = f; const g = this.ctx.createGain(); o.connect(g); g.connect(this.master); this.env(g, a, d, peak); o.start(); o.stop(this.ctx.currentTime + a + d + 0.05); },
+  chirp() { this.tone(4200 + Math.random() * 800, 0.01, 0.06, 0.012); setTimeout(() => this.tone(4400, 0.01, 0.05, 0.009), 90); },
+  step() { if (!this.ctx || !this.on) return; const b = this.ctx.createBuffer(1, 900, this.ctx.sampleRate); const d = b.getChannelData(0); for (let i = 0; i < 900; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / 900); const s = this.ctx.createBufferSource(); s.buffer = b; const f = this.ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 300 + Math.random() * 150; const g = this.ctx.createGain(); g.gain.value = 0.24; s.connect(f); f.connect(g); g.connect(this.master); s.start(); },
+  blip() { this.tone(760, 0.01, 0.12, 0.05); },
+  pickup() { this.tone(880, 0.01, 0.18, 0.06); setTimeout(() => this.tone(1320, 0.01, 0.22, 0.05), 90); },
+  fanfare() { [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => this.tone(f, 0.012, 0.4, 0.07, 'triangle'), i * 130)); },
+  buy() { this.tone(392, 0.01, 0.2, 0.06, 'triangle'); setTimeout(() => this.tone(587, 0.01, 0.28, 0.06, 'triangle'), 110); },
+  gulp() { this.tone(220, 0.02, 0.1, 0.06); setTimeout(() => this.tone(180, 0.02, 0.12, 0.06), 140); setTimeout(() => this.tone(660, 0.01, 0.3, 0.05, 'triangle'), 340); },
+  wolf() { this.tone(240, 0.05, 0.5, 0.05, 'sawtooth'); setTimeout(() => this.tone(200, 0.06, 0.6, 0.04, 'sawtooth'), 250); },
+};
+const muteBtn = document.getElementById('mute');
+muteBtn.addEventListener('click', () => { SFX.on = !SFX.on; muteBtn.textContent = SFX.on ? '♪ SOUND ON' : '♪ MUTED'; if (SFX.on && SFX.ctx && SFX.ctx.state === 'suspended') SFX.ctx.resume(); });
+addEventListener('keydown', e => { if (e.key.toLowerCase() === 'm') muteBtn.click(); });
+
+// ---------- helpers ----------
+const rand = (i, s) => { const x = Math.sin(i * 127.1 + s * 311.7) * 43758.5453; return x - Math.floor(x); };
+const colliders = [];
+// Oriented box colliders for long walls (circles let you slip past their ends).
+const boxes = [];
+function addBox(x, z, hw, hd, rot) { boxes.push({ x, z, hw, hd, cos: Math.cos(rot), sin: Math.sin(rot) }); }
+const gltfLoader = new GLTFLoader();
+// GLTF ships PBR materials; on integrated GPUs the per-fragment cost of
+// MeshLambertMaterial across a whole village is the frame budget.  Swapping
+// every imported material for Lambert keeps the texture and most of the look
+// at a fraction of the price.
+function toLambert(root) {
+  root.traverse(o => {
+    if (!o.isMesh || !o.material) return;
+    const swap = m => {
+      if (m.isMeshLambertMaterial || m.isMeshBasicMaterial) return m;
+      const nm = new THREE.MeshLambertMaterial({
+        map: m.map || null,
+        color: m.color ? m.color.clone() : new THREE.Color(0xffffff),
+        transparent: m.transparent, opacity: m.opacity,
+        side: m.side, alphaTest: m.alphaTest || 0,
+      });
+      if (m.emissive && (m.emissive.r || m.emissive.g || m.emissive.b)) { nm.emissive = m.emissive.clone(); nm.emissiveMap = m.emissiveMap || null; nm.emissiveIntensity = m.emissiveIntensity ?? 1; }
+      return nm;
+    };
+    o.material = Array.isArray(o.material) ? o.material.map(swap) : swap(o.material);
+  });
+}
+
+// ---------- terrain ----------
+// Flat village core, rolling hills outside, and a stream channel carved south
+// of the plaza.  All heights everywhere come from this one function.
+const STREAM = { z: -34, half: 8.5, depth: 1.8 };
+const POND = { x: -35, z: 26, r: 8, depth: 1.6 };
+const RUINS = { x: -102, z: -12, r: 42 };
+function hmap(x, z) {
+  const d = Math.hypot(x, z);
+  const t = Math.min(1, Math.max(0, (d - 70) / 48));
+  const dr = Math.hypot(x - RUINS.x, z - RUINS.z);
+  const tr = Math.min(1, Math.max(0, (dr - RUINS.r) / 22));
+  let h = t * tr * (2.4 * Math.sin(x * 0.021) * Math.cos(z * 0.024) + 1.1 * Math.sin(x * 0.052 + 1.3) * Math.sin(z * 0.043) + 0.5 * Math.sin(x * 0.11) * Math.cos(z * 0.09))
+    + (1 - tr) * 0.7; // the old-city plateau sits slightly above the vale
+  const sz = Math.abs(z - STREAM.z);
+  if (sz < STREAM.half) {
+    const fade = Math.max(0, 1 - Math.max(0, Math.abs(x) - 95) / 30);
+    h -= STREAM.depth * (1 - (sz / STREAM.half) ** 2) * fade;
+  }
+  const pd = Math.hypot(x - POND.x, z - POND.z);
+  if (pd < POND.r) h -= POND.depth * (1 - (pd / POND.r) ** 2);
+  return h;
+}
+// Walkable decks layered over the terrain: the stream bridge, the two inclined
+// sky ramps, and the floating-island platforms.  ground() is what the player,
+// NPCs and pickups all stand on.
+const DECKS = [
+  { type: 'ramp', ax: 0, az: -27.4, ay: 0.55, bx: 0, bz: -40.6, by: 0.55, halfW: 2.4, lead: 2.6 },   // stream bridge
+];
+function deckHeight(x, z) {
+  let best = -1e9;
+  for (const d of DECKS) {
+    if (d.type === 'disc') {
+      const dist = Math.hypot(x - d.x, z - d.z);
+      if (dist < d.r) best = Math.max(best, d.y);
+      else if (dist < d.r + 2) { const h = hmap(x, z); best = Math.max(best, h + (d.y - h) * (1 - (dist - d.r) / 2)); }
+    } else {
+      const abx = d.bx - d.ax, abz = d.bz - d.az;
+      const L = Math.hypot(abx, abz);
+      const apx = x - d.ax, apz = z - d.az;
+      const along = (apx * abx + apz * abz) / L;
+      const perp = Math.abs(apx * abz - apz * abx) / L;
+      if (perp > d.halfW || along < -d.lead || along > L + d.lead) continue;
+      const t = Math.max(0, Math.min(1, along / L));
+      let y = d.ay + (d.by - d.ay) * t;
+      if (along < 0) { const h = hmap(x, z); y = h + (y - h) * (1 + along / d.lead); }
+      else if (along > L) { const h = hmap(x, z); y = h + (y - h) * (1 - (along - L) / d.lead); }
+      best = Math.max(best, y);
+    }
+  }
+  return best;
+}
+function ground(x, z) { return Math.max(hmap(x, z), deckHeight(x, z)); }
+{
+  const g = new THREE.PlaneGeometry(900, 900, 200, 200);
+  g.rotateX(-Math.PI / 2);
+  const p = g.attributes.position;
+  const colors = new Float32Array(p.count * 3);
+  const col = new THREE.Color(), moist = new THREE.Color(0x5a7d52), dry = new THREE.Color(0xa8b070), base = new THREE.Color(0xffffff);
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i), z = p.getZ(i);
+    p.setY(i, hmap(x, z));
+    // tonal variation: moist banks near the stream, dusty warmth near the plaza, noise everywhere
+    col.copy(base);
+    const streamD = Math.abs(z - STREAM.z);
+    if (streamD < 14) col.lerp(moist, (1 - streamD / 14) * 0.7);
+    const plazaD = Math.hypot(x, z);
+    if (plazaD < 22) col.lerp(dry, (1 - plazaD / 22) * 0.5);
+    const n = 0.86 + 0.14 * Math.sin(x * 0.35 + Math.sin(z * 0.28)) * Math.cos(z * 0.31 + Math.sin(x * 0.22));
+    col.multiplyScalar(n);
+    colors.set([col.r, col.g, col.b], i * 3);
+  }
+  g.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  g.computeVertexNormals();
+  const groundMat = new THREE.MeshLambertMaterial({ map: T.grass, color: 0xB6C288, vertexColors: true });
+  const terrain = new THREE.Mesh(g, groundMat);
+  terrain.receiveShadow = true;
+  scene.add(terrain);
+}
+// plaza — a real cobbled ground disc at the village heart
+{
+  const plaza = new THREE.Mesh(new THREE.CircleGeometry(13.5, 56).rotateX(-Math.PI / 2),
+    new THREE.MeshLambertMaterial({ map: T.cobble, color: 0xCBBFA8 }));
+  plaza.position.y = 0.045; plaza.receiveShadow = true; scene.add(plaza);
+  // worn ring where the cobbles meet the grass
+  const ring = new THREE.Mesh(new THREE.RingGeometry(13.5, 15.2, 56).rotateX(-Math.PI / 2),
+    new THREE.MeshLambertMaterial({ map: T.dirt, color: 0xA08A66, transparent: true, opacity: 0.85 }));
+  ring.position.y = 0.04; scene.add(ring);
+}
+// roads — terrain-conforming dirt strips (never raised slabs)
+const roadMat = new THREE.MeshLambertMaterial({ map: T.dirt, color: 0xC2A87E });
+function road(x1, z1, x2, z2, width) {
+  const dx = x2 - x1, dz = z2 - z1, len = Math.hypot(dx, dz);
+  const g = new THREE.PlaneGeometry(width, len, 2, Math.max(4, Math.round(len / 3)));
+  g.rotateX(-Math.PI / 2);
+  const yaw = Math.atan2(dx, dz);
+  const cosY = Math.cos(yaw), sinY = Math.sin(yaw);
+  const cx = (x1 + x2) / 2, cz = (z1 + z2) / 2;
+  const p = g.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const lx = p.getX(i), lz = p.getZ(i);
+    const wx = cx + lx * cosY + lz * sinY;
+    const wz = cz - lx * sinY + lz * cosY;
+    p.setXYZ(i, wx, hmap(wx, wz) + 0.06, wz);
+  }
+  g.computeVertexNormals();
+  // stretch UVs along the strip so one shared dirt texture tiles per ~7m
+  const uv = g.attributes.uv;
+  for (let i = 0; i < uv.count; i++) uv.setY(i, uv.getY(i) * Math.max(1, len / 7));
+  const m = new THREE.Mesh(g, roadMat);
+  m.receiveShadow = true;
+  scene.add(m);
+}
+road(0, -12.8, 0, -27.6, 4.6);       // plaza south edge → bridge north bank
+road(0, -40.4, 8, -50, 4.2);         // bridge south bank → watchtower
+road(-6, 11.5, -16.5, 26.5, 3.6);    // plaza → tavern door
+road(10.5, 8.5, 28, 18.5, 3.6);      // plaza → Wen's house / market
+road(-12.5, -1, -35, -9, 3.4);       // plaza → west cottage
+road(10.5, -8, 33, -18.5, 3.4);      // plaza → east house
+road(-12, -5.5, -23, -21, 3.2);      // plaza → shrine
+road(2, 13.2, 16, 41, 3.4);          // plaza → north cottage
+road(-4, 13.2, -8, 51, 3.4);         // plaza → north-row house
+road(-8, 58, 8, 96, 3.6);            // north-row → the long north road
+road(8, 96, 20, 124, 3.6);           // north road → the farmstead
+road(13.2, 2, 44, 2, 3.4);           // plaza → east homestead
+road(-16, 27, -31, 26.5, 2.8);       // tavern → the pond
+road(-35, -9, -58, -7, 3.8);         // west cottage → out the west gap
+road(-58, -7, -90, -6, 3.8);         // → the Standing Guardian
+
+// ---------- stream water ----------
+let waterMat;
+{
+  waterMat = new THREE.MeshLambertMaterial({ map: T.water, color: 0xBFD8E8, transparent: true, opacity: 0.9 });
+  const water = new THREE.Mesh(new THREE.PlaneGeometry(250, 11.5).rotateX(-Math.PI / 2), waterMat);
+  water.position.set(0, -1.05, STREAM.z);
+  scene.add(water);
+  // the pond by the tavern meadow
+  const pond = new THREE.Mesh(new THREE.CircleGeometry(POND.r - 0.6, 36).rotateX(-Math.PI / 2), waterMat);
+  pond.position.set(POND.x, -0.72, POND.z);
+  scene.add(pond);
+  const padMat = new THREE.MeshLambertMaterial({ color: 0x3E7A4A });
+  for (let i = 0; i < 8; i++) {
+    const a = rand(i, 80) * 6.28, r = 1.5 + rand(i, 81) * 5;
+    const pad = new THREE.Mesh(new THREE.CircleGeometry(0.4 + rand(i, 82) * 0.35, 10).rotateX(-Math.PI / 2), padMat);
+    pad.position.set(POND.x + Math.cos(a) * r, -0.68, POND.z + Math.sin(a) * r);
+    scene.add(pad);
+  }
+}
+
+// ---------- sky dome: 3-texture day/night blend ----------
+const skyU = { uA: { value: T.skySunrise }, uB: { value: T.skyDusk }, uC: { value: T.skyNight }, wA: { value: 0 }, wB: { value: 1 }, wC: { value: 0 } };
+{
+  // Sky dome rides with the camera at a small radius so it always sits inside
+  // the near/far planes (no clipping) regardless of how far you roam.
+  const sky = new THREE.Mesh(new THREE.SphereGeometry(320, 32, 20),
+    new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, depthTest: false, fog: false, uniforms: skyU,
+      vertexShader: 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+      fragmentShader: `varying vec2 vUv; uniform sampler2D uA,uB,uC; uniform float wA,wB,wC;
+        void main(){ vec2 uv = vec2(vUv.x, clamp((vUv.y-0.42)*1.7, 0.02, 0.98));
+        vec3 c = texture2D(uA,uv).rgb*wA + texture2D(uB,uv).rgb*wB + texture2D(uC,uv).rgb*wC;
+        gl_FragColor = vec4(c,1.0);}` }));
+  sky.renderOrder = -1;
+  scene.add(sky);
+  window.__sky = sky;
+}
+const hemi = new THREE.HemisphereLight(0xFFD9B0, 0x3C4A2A, 1.5); scene.add(hemi);
+const sunL = new THREE.DirectionalLight(0xFFB27A, 2.0); sunL.position.set(-180, 120, -240); scene.add(sunL);
+
+const CYCLE = 720;
+const KEYS = [
+  { ph: 0.00, sky: [1, 0, 0], hemiS: 0xFFD2A8, hemiG: 0x4A3A2A, hemiI: 1.3, sunC: 0xFFB27A, sunI: 1.8, fogC: 0xC9917A, fogD: 0.0036, night: 0 },
+  { ph: 0.25, sky: [1, 0, 0], hemiS: 0xEAF2FF, hemiG: 0x51603C, hemiI: 1.9, sunC: 0xFFF4E0, sunI: 2.4, fogC: 0x9FB4C8, fogD: 0.0024, night: 0 },
+  { ph: 0.50, sky: [0, 1, 0], hemiS: 0xFFD9B0, hemiG: 0x3C4A2A, hemiI: 1.5, sunC: 0xFFB27A, sunI: 2.0, fogC: 0x63452E, fogD: 0.0048, night: 0.55 },
+  { ph: 0.75, sky: [0, 0, 1], hemiS: 0x8B9DD0, hemiG: 0x2E3852, hemiI: 2.3, sunC: 0xBECDFF, sunI: 1.8, fogC: 0x39466F, fogD: 0.0045, night: 1 },
+  { ph: 1.00, sky: [1, 0, 0], hemiS: 0xFFD2A8, hemiG: 0x4A3A2A, hemiI: 1.3, sunC: 0xFFB27A, sunI: 1.8, fogC: 0xC9917A, fogD: 0.0036, night: 0 },
+];
+const cA = new THREE.Color(), cB = new THREE.Color();
+let nightness = 0.55;
+function applyCycle(ph) {
+  let a = KEYS[0], b = KEYS[1];
+  for (let i = 0; i < KEYS.length - 1; i++) if (ph >= KEYS[i].ph && ph <= KEYS[i + 1].ph) { a = KEYS[i]; b = KEYS[i + 1]; break; }
+  const f = (ph - a.ph) / (b.ph - a.ph || 1);
+  skyU.wA.value = a.sky[0] + (b.sky[0] - a.sky[0]) * f;
+  skyU.wB.value = a.sky[1] + (b.sky[1] - a.sky[1]) * f;
+  skyU.wC.value = a.sky[2] + (b.sky[2] - a.sky[2]) * f;
+  hemi.color.lerpColors(cA.setHex(a.hemiS), cB.setHex(b.hemiS), f);
+  hemi.groundColor.lerpColors(cA.setHex(a.hemiG), cB.setHex(b.hemiG), f);
+  hemi.intensity = a.hemiI + (b.hemiI - a.hemiI) * f;
+  sunL.color.lerpColors(cA.setHex(a.sunC), cB.setHex(b.sunC), f);
+  sunL.intensity = a.sunI + (b.sunI - a.sunI) * f;
+  scene.fog.color.lerpColors(cA.setHex(a.fogC), cB.setHex(b.fogC), f);
+  scene.fog.density = (a.fogD + (b.fogD - a.fogD) * f) * (save.elixirs.sight ? 0.65 : 1);
+  nightness = a.night + (b.night - a.night) * f;
+}
+
+// ---------- GLB world kit ----------
+// Each source file is fetched once, then cloned per placement.
+function placeWorldAsset(file, placements) {
+  gltfLoader.load(file, gltf => {
+    const source = gltf.scene;
+    source.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    toLambert(source);
+    placements.forEach(p => {
+      const model = source.clone(true);
+      model.scale.setScalar(p.s || 1);
+      model.rotation.y = p.r || 0;
+      model.position.set(p.x, 0, p.z);
+      scene.add(model);
+      model.updateMatrixWorld(true);
+      const box = new THREE.Box3().setFromObject(model);
+      model.position.y += ground(p.x, p.z) - box.min.y + (p.y || 0);
+      if (p.collider) colliders.push({ x: p.x, z: p.z, r: p.collider });
+      if (p.onPlace) p.onPlace(model);
+    });
+  }, undefined, err => console.warn('World asset failed to load:', file, err));
+}
+
+// --- village buildings (all imported GLBs; the box-and-cone era is over) ---
+// The settlement breathes now: eight homes scattered across a wide meadow
+// instead of huddling around the plaza.
+const TAVERN_DOOR = { x: -16.5, z: 27.8 };
+placeWorldAsset('assets/fantasy_cottage.glb', [
+  { x: -18, z: 34, s: 13, r: Math.PI, collider: 5.2 },      // the tavern
+  { x: -46, z: -30, s: 10.5, r: 0.95, collider: 4.4 },      // west cottage (clear of the ruin road)
+  { x: 24, z: 50, s: 10, r: -2.7, collider: 4.2 },          // north cottage
+  { x: 56, z: 4, s: 10.5, r: -1.6, collider: 4.4 },         // east homestead
+  { x: 16, z: 124, s: 11, r: Math.PI, collider: 4.6 },      // NORTH FARMSTEAD cottage
+]);
+placeWorldAsset('assets/village_house.glb', [
+  { x: 32, z: 22, s: 11, r: -2.35, collider: 4.8 },         // Wen's house / market
+  { x: 42, z: -24, s: 10, r: -0.9, collider: 4.4 },         // east house
+  { x: -12, z: 62, s: 10.5, r: Math.PI, collider: 4.6 },    // north-row house
+  { x: -56, z: 26, s: 10, r: 1.25, collider: 4.4 },         // pondside house
+  { x: 40, z: 134, s: 11, r: -2.4, collider: 4.6 },         // NORTH FARMSTEAD barn
+]);
+placeWorldAsset('assets/watch_tower.glb', [{ x: 12, z: -55, s: 13, r: 0.35, collider: 3.2 }]);
+
+// --- THE STANDING GUARDIAN: a lone weathered colossus on the western plain ---
+// The old ruined keep was cleared away; this pale stone guardian marks where the
+// city once stood. Normals are recomputed so it reads as stone, not a shadow.
+placeWorldAsset('mystery.glb', [{ x: -100, z: -8, s: 6.5, r: 1.1, collider: 3.2,
+  onPlace: m => m.traverse(o => { if (o.isMesh) { o.geometry.computeVertexNormals(); if (o.material) { o.material.color.setHex(0xC8C0B2); o.material.needsUpdate = true; } } }) }]);
+placeWorldAsset('assets/bush_variant.glb', [ // a little overgrowth at its feet
+  { x: -94, z: -4, s: 2.4 }, { x: -108, z: -12, s: 2.6 },
+]);
+{
+  const glow = new THREE.PointLight(0xBEA8FF, 16, 28);
+  glow.position.set(-100, hmap(-100, -8) + 5, -8);
+  scene.add(glow);
+  window.__keepGlow = glow;
+}
+
+// (the far northern hills stay open meadow — the farmstead is the northern destination)
+
+// --- the rune bridge over the stream ---
+// The GLB is stored upright; rotation.x = -π/2 lays it flat with its span along
+// local -Z, and adding the pitch angle to the same axis tilts the far end up.
+placeRuneBridges();
+function placeRuneBridges() {
+  gltfLoader.load('bridge.glb', gltf => {
+    const source = gltf.scene;
+    source.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    toLambert(source);
+    DECKS.filter(d => d.type === 'ramp').forEach(d => {
+      const run = Math.hypot(d.bx - d.ax, d.bz - d.az);
+      const rise = d.by - d.ay;
+      const slopeLen = Math.hypot(run, rise);
+      const pitch = Math.atan2(rise, run);
+      const model = source.clone(true);
+      model.rotation.order = 'YXZ';
+      model.rotation.y = Math.atan2(-(d.bx - d.ax), -(d.bz - d.az));
+      model.rotation.x = -Math.PI / 2 + pitch;
+      model.scale.set(Math.max(4.5, d.halfW * 2.75 / 0.73), (slopeLen + 2.2) / 1.91, 6.9);
+      model.position.set((d.ax + d.bx) / 2, 0, (d.az + d.bz) / 2);
+      scene.add(model);
+      model.updateMatrixWorld(true);
+      const box = new THREE.Box3().setFromObject(model);
+      model.position.y += ((d.ay + d.by) / 2 + 0.32) - (box.min.y + box.max.y) / 2 - (box.max.y - box.min.y) * 0.18;
+    });
+  }, undefined, err => console.warn('bridge failed:', err));
+}
+
+// --- runic stone walls flank the south road: the village gate ---
+placeWorldAsset('3d_1780765930665.glb', [
+  { x: -5.6, z: -18, s: 3.4, r: 0.12, collider: 3.4 },
+  { x: 5.6, z: -18, s: 3.4, r: -0.12, collider: 3.4 },
+]);
+
+// --- mossy log palisade around the settlement, with gaps at the roads ---
+{
+  const segs = [];
+  const R = 66;
+  // angles (radians, 0 = +z north) that leave openings at the south road and west gap
+  [-2.55, -1.85, -1.1, -0.45, 0.25, 0.95, 1.65, 2.35, 3.0].forEach(a => {
+    const x = Math.sin(a) * R, z = Math.cos(a) * R;
+    segs.push({ x, z, s: 6, r: a + Math.PI / 2, collider: 5.4 });
+  });
+  placeWorldAsset('Mossy Forest.glb', segs);
+}
+
+// --- trees & greenery ---
+// A few detailed hero trees frame the plaza; the rest of the vale is filled by
+// one instanced low-poly forest (two draw calls for the whole map, ~140 tris each).
+placeWorldAsset('assets/oak_tree.glb', [
+  { x: -28, z: 12, s: 8, collider: 1.4 }, { x: 42, z: 34, s: 7, collider: 1.3 },
+  { x: -36, z: -32, s: 8, collider: 1.4 }, { x: 48, z: -32, s: 9, collider: 1.5 },
+  { x: -26, z: 46, s: 7.5, collider: 1.4 }, { x: 30, z: 50, s: 8, collider: 1.4 },
+]);
+placeWorldAsset('3d_1781646905657.glb', [ // a few stylized pines by the stream & tower
+  { x: -11, z: -45, s: 5.5, collider: 1.2 }, { x: 24, z: -45, s: 5, collider: 1.2 },
+  { x: 4, z: -62, s: 5.5, collider: 1.2 }, { x: -26, z: -48, s: 4.8, collider: 1.1 },
+]);
+// ---- instanced low-poly forest ----
+{
+  const trunkGeo = new THREE.CylinderGeometry(0.16, 0.28, 2.4, 5); trunkGeo.translate(0, 1.2, 0);
+  const foliGeo = new THREE.IcosahedronGeometry(1.55, 1); foliGeo.translate(0, 3.3, 0);   // detail 1 = rounder
+  const N = 150;
+  const trunkInst = new THREE.InstancedMesh(trunkGeo, new THREE.MeshLambertMaterial({ color: 0x6b4a2f }), N);
+  const foliInst = new THREE.InstancedMesh(foliGeo, new THREE.MeshLambertMaterial({}), N);
+  trunkInst.receiveShadow = false; foliInst.receiveShadow = false;
+  const mtx = new THREE.Matrix4(), pos = new THREE.Vector3(), quat = new THREE.Quaternion(), scl = new THREE.Vector3();
+  const col = new THREE.Color();
+  const palette = [0x8a9a3a, 0xC8832A, 0xA85A24, 0xD8A93A, 0x6f7a2e, 0xB0702A];
+  let idx = 0, guard = 0;
+  // keep clear of the plaza core, the pond and the immediate house lots
+  const tooClose = (x, z) => Math.hypot(x, z) < 22 || Math.hypot(x - POND.x, z - POND.z) < 11 ||
+    colliders.some(c => Math.hypot(x - c.x, z - c.z) < c.r + (c.r > 3 ? 6 : 2.5));
+  while (idx < N && guard < N * 40) {
+    guard++;
+    const a = Math.random() * 6.28, r = 26 + Math.sqrt(Math.random()) * 168;
+    const x = Math.cos(a) * r, z = Math.sin(a) * r * 0.9 + 20;   // bias north where the map is longer
+    if (Math.abs(x) > 205 || Math.abs(z) > 205 || tooClose(x, z)) continue;
+    const s = 1.5 + Math.random() * 1.6;
+    pos.set(x, ground(x, z), z);
+    quat.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.random() * 6.28);
+    scl.set(s, s * (0.85 + Math.random() * 0.4), s);
+    mtx.compose(pos, quat, scl);
+    trunkInst.setMatrixAt(idx, mtx); foliInst.setMatrixAt(idx, mtx);
+    col.setHex(palette[(Math.random() * palette.length) | 0]).multiplyScalar(0.8 + Math.random() * 0.4);
+    foliInst.setColorAt(idx, col);
+    if (r < 120 && idx % 2 === 0) colliders.push({ x, z, r: 0.9 });   // only nearer trees block
+    idx++;
+  }
+  trunkInst.count = idx; foliInst.count = idx;
+  trunkInst.instanceMatrix.needsUpdate = true; foliInst.instanceMatrix.needsUpdate = true;
+  if (foliInst.instanceColor) foliInst.instanceColor.needsUpdate = true;
+  scene.add(trunkInst, foliInst);
+}
+placeWorldAsset('assets/flowering_shrub.glb', [
+  { x: -16, z: 12, s: 2.6 }, { x: -8, z: 21, s: 2.2 },
+  { x: 16, z: 5, s: 2.4 }, { x: 34, z: 12, s: 2.6 },
+  { x: -32, z: 18, s: 2.4 }, { x: 38, z: -32, s: 2.4 },
+  { x: 10, z: 30, s: 2.4 }, { x: 22, z: 40, s: 2.2 },
+  { x: -42, z: -16, s: 2.4 }, { x: -12, z: 46, s: 2.3 },
+]);
+placeWorldAsset('assets/grass_bush.glb', [
+  { x: -9, z: -13, s: 1.8 }, { x: 9, z: 13, s: 1.8 },
+  { x: -28, z: -28, s: 2.2 }, { x: 30, z: -26, s: 2.2 },
+  { x: -40, z: 4, s: 2 }, { x: 41, z: -4, s: 2 },
+  { x: 15, z: -30, s: 1.9 }, { x: -14, z: -30, s: 1.9 },
+  { x: -40, z: 32, s: 2 }, { x: 22, z: -58, s: 2 },
+  { x: 28, z: 28, s: 2 }, { x: -4, z: 40, s: 1.9 },
+]);
+placeWorldAsset('assets/sawgrass.glb', [ // reeds around the pond & stream banks
+  { x: -28.5, z: 22, s: 2.2 }, { x: -41, z: 22, s: 2.4 }, { x: -38, z: 33, s: 2.2 },
+  { x: -29, z: 31, s: 1.9 }, { x: 9, z: -27.5, s: 1.8 }, { x: -8, z: -40.5, s: 2 },
+  { x: 18, z: -28, s: 1.9 }, { x: -30, z: -40, s: 2 },
+]);
+// daisy bushes — pickable for Rhea's posy favor
+const DAISY_SPOTS = [[-22, 29], [12, -14], [-18, -12], [-34, 36], [24, 32], [40, -8]];
+const DAISIES = DAISY_SPOTS.map(([x, z], i) => ({ x, z, picked: !!(save.daisyPicked || [])[i] }));
+placeWorldAsset('assets/daisy_bush.glb', DAISY_SPOTS.map(([x, z], i) => ({
+  x, z, s: 1.5,
+  onPlace: m => { DAISIES[i].model = m; if (DAISIES[i].picked) m.scale.multiplyScalar(0.7); },
+})));
+
+// --- street lamps (the lamp-lighting favor uses these) ---
+const LAMPS = [];
+{
+  const spots = [[3.5, 14], [-4, -16], [18, 10], [-11.5, 18]];
+  gltfLoader.load('assets/iron_lamp.glb', gltf => {
+    const source = gltf.scene;
+    source.traverse(o => { if (o.isMesh) { o.castShadow = true; } });
+    toLambert(source);
+    spots.forEach(([x, z]) => {
+      const model = source.clone(true);
+      model.scale.setScalar(3.4);
+      model.position.set(x, 0, z);
+      scene.add(model);
+      model.updateMatrixWorld(true);
+      const box = new THREE.Box3().setFromObject(model);
+      model.position.y += hmap(x, z) - box.min.y;
+      const light = new THREE.PointLight(0xFFD9A0, 0, 16);
+      light.position.set(x, hmap(x, z) + box.getSize(new THREE.Vector3()).y - 0.5, z);
+      scene.add(light);
+      LAMPS.push({ x, z, light, lit: save.lamps >= 4 });
+      colliders.push({ x, z, r: 0.5 });
+    });
+  }, undefined, err => console.warn('lamp failed:', err));
+}
+
+// --- market clutter by Wen's house ---
+// procedural barrels (the imported prop was a 26MB steampunk model — too heavy to ship)
+{
+  const bodyMat = new THREE.MeshLambertMaterial({ color: 0x8a5a34 });
+  const bandMat = new THREE.MeshLambertMaterial({ color: 0x463322 });
+  [[24.5, 14.5, 1.05], [26, 13, 0.85], [-13.5, 31.5, 1.0]].forEach(([x, z, s], i) => {
+    const g = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.42 * s, 0.36 * s, 0.98 * s, 12), bodyMat);
+    body.position.y = 0.49 * s; g.add(body);
+    [0.22, 0.76].forEach(h => { const band = new THREE.Mesh(new THREE.TorusGeometry(0.43 * s, 0.045 * s, 6, 14).rotateX(Math.PI / 2), bandMat); band.position.y = h * s; g.add(band); });
+    g.position.set(x, ground(x, z), z); g.rotation.y = i * 1.3; scene.add(g);
+    colliders.push({ x, z, r: 0.5 * s });
+  });
+}
+
+// --- the shrine: runic staff on a stone pad west of the plaza ---
+placeWorldAsset('assets/crystal_staff.glb', [{ x: -27, z: -25.5, s: 2.6, r: 0.6, collider: 0.8 }]);
+{
+  const pad = new THREE.Mesh(new THREE.CircleGeometry(3.6, 28).rotateX(-Math.PI / 2),
+    new THREE.MeshLambertMaterial({ map: T.cobble, color: 0xA79BC0 }));
+  pad.position.set(-25.5, hmap(-25.5, -23.5) + 0.05, -23.5); pad.receiveShadow = true; scene.add(pad);
+  const stoneMat = new THREE.MeshLambertMaterial({ color: 0x6F6880 });
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2 + 0.4;
+    const st = new THREE.Mesh(new THREE.DodecahedronGeometry(0.3 + rand(i, 15) * 0.15, 0), stoneMat);
+    st.position.set(-25.5 + Math.cos(a) * 3.3, 0.18, -23.5 + Math.sin(a) * 3.3);
+    st.rotation.set(rand(i, 16) * 3, rand(i, 17) * 3, 0);
+    scene.add(st);
+  }
+  const glow = new THREE.PointLight(0x9A6BE8, 14, 14);
+  glow.position.set(-27, hmap(-27, -25.5) + 2.4, -25.5);
+  scene.add(glow);
+  window.__shrineGlow = glow;
+}
+
+// (the floating isle was removed — the vale keeps its feet on the ground now)
+
+// ---------- fire pit at the plaza heart ----------
+{
+  const x = 0, z = 0;
+  const stoneMat = new THREE.MeshLambertMaterial({ color: 0x7A7168 });
+  for (let i = 0; i < 9; i++) {
+    const a = (i / 9) * Math.PI * 2;
+    const st = new THREE.Mesh(new THREE.DodecahedronGeometry(0.26 + rand(i, 5) * 0.1, 0), stoneMat);
+    st.position.set(x + Math.cos(a) * 1.15, 0.16, z + Math.sin(a) * 1.15);
+    st.rotation.set(rand(i, 6) * 3, rand(i, 7) * 3, rand(i, 8));
+    st.scale.y = 0.72;
+    scene.add(st);
+  }
+  const fire = new THREE.PointLight(0xFF9A4D, 50, 30); fire.position.set(x, 1.6, z); scene.add(fire);
+  const flame = new THREE.Group();
+  const outer = new THREE.Mesh(new THREE.ConeGeometry(0.4, 0.95, 7),
+    new THREE.MeshBasicMaterial({ color: 0xFF7A2E, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false }));
+  outer.position.y = 0.62;
+  const inner = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.6, 7),
+    new THREE.MeshBasicMaterial({ color: 0xFFD98A, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false }));
+  inner.position.y = 0.5;
+  const embers = new THREE.Mesh(new THREE.CircleGeometry(0.75, 12).rotateX(-Math.PI / 2),
+    new THREE.MeshBasicMaterial({ color: 0xB33A16 }));
+  embers.position.y = 0.12;
+  flame.add(embers, outer, inner);
+  flame.position.set(x, 0.08, z);
+  scene.add(flame);
+  window.__flame = flame; window.__fire = fire;
+  colliders.push({ x, z, r: 1.7 });
+}
+
+// ---------- rubble worth reading: E-to-inspect lore spots in the ruins ----------
+// (the old-city rubble & amber relics were cleared with the ruins)
+const RUBBLE = [];
+const RELICS = [];
+
+// ---------- watchtower beacon (Wen's favor) ----------
+const BEACON = { x: 12, z: -55, lit: save.quests.beacon === 'lit' || save.quests.beacon === 'done' };
+{
+  const g = new THREE.Group();
+  const outer = new THREE.Mesh(new THREE.ConeGeometry(0.7, 1.7, 7),
+    new THREE.MeshBasicMaterial({ color: 0xFF7A2E, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false }));
+  outer.position.y = 0.9;
+  const inner = new THREE.Mesh(new THREE.ConeGeometry(0.35, 1.1, 7),
+    new THREE.MeshBasicMaterial({ color: 0xFFD98A, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false }));
+  inner.position.y = 0.75;
+  g.add(outer, inner);
+  g.position.set(BEACON.x, 13.2, BEACON.z);
+  g.visible = BEACON.lit;
+  scene.add(g);
+  const light = new THREE.PointLight(0xFFA25E, BEACON.lit ? 40 : 0, 55);
+  light.position.set(BEACON.x, 14.4, BEACON.z);
+  scene.add(light);
+  BEACON.flame = g; BEACON.light = light;
+}
+
+// ---------- fireflies ----------
+let flies;
+{
+  const n = 140, pos = new Float32Array(n * 3), seed = [];
+  for (let i = 0; i < n; i++) { const x = (Math.random() - 0.5) * 170, z = (Math.random() - 0.5) * 170; pos.set([x, hmap(x, z) + 1 + Math.random() * 4, z], i * 3); seed.push(Math.random() * 6.28); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const glowTex = canvasTex(64, (ctx, S) => {
+    const grad = ctx.createRadialGradient(S / 2, S / 2, 1, S / 2, S / 2, S / 2);
+    grad.addColorStop(0, 'rgba(255,240,190,1)');
+    grad.addColorStop(0.4, 'rgba(255,220,140,0.5)');
+    grad.addColorStop(1, 'rgba(255,220,140,0)');
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, S, S);
+  });
+  flies = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xFFE9A0, size: 0.5, map: glowTex, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false }));
+  flies.userData.seed = seed; scene.add(flies);
+}
+
+// ---------- characters ----------
+// Every NPC is a real rigged GLB, normalized to human scale, ground-aligned,
+// arms dropped out of the bind pose, breathing procedurally.  No mannequins.
+function dropArms(root) {
+  root.updateMatrixWorld(true);
+  ['Left', 'Right'].forEach(side => {
+    let arm = null, fore = null;
+    root.traverse(o => { if (o.isBone) { if (o.name === side + 'Arm') arm = o; if (o.name === side + 'ForeArm') fore = o; } });
+    if (!arm || !fore) return;
+    const a = arm.getWorldPosition(new THREE.Vector3());
+    const f = fore.getWorldPosition(new THREE.Vector3());
+    const cur = f.clone().sub(a).normalize();
+    const out = side === 'Left' ? 1 : -1;
+    const des = new THREE.Vector3(out * 0.22, -1, 0.08).normalize();
+    const q = new THREE.Quaternion().setFromUnitVectors(cur, des);
+    const pwq = arm.parent.getWorldQuaternion(new THREE.Quaternion());
+    arm.quaternion.premultiply(pwq.clone().invert().multiply(q).multiply(pwq));
+    root.updateMatrixWorld(true);
+  });
+}
+// Skeleton-aware world bounds: SkinnedMesh.computeBoundingBox (r160) follows the
+// posed bones, so this measures what is actually rendered — the plain
+// Box3.setFromObject bind-pose box under-reports rigs that carry armature scale.
+function skinnedWorldBox(root) {
+  root.updateMatrixWorld(true);
+  const box = new THREE.Box3(); box.makeEmpty();
+  const tmp = new THREE.Box3();
+  root.traverse(o => {
+    if (o.isSkinnedMesh) {
+      o.computeBoundingBox();
+      tmp.copy(o.boundingBox).applyMatrix4(o.matrixWorld);
+      box.union(tmp);
+    } else if (o.isMesh) {
+      if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+      tmp.copy(o.geometry.boundingBox).applyMatrix4(o.matrixWorld);
+      box.union(tmp);
+    }
+  });
+  return box;
+}
+const CHARACTERS = [];
+function spawnCharacter(cfg) {
+  const holder = new THREE.Group();
+  const y = ground(cfg.x, cfg.z);
+  holder.position.set(cfg.x, y, cfg.z);
+  holder.rotation.y = cfg.face || 0;
+  scene.add(holder);
+  const c = Object.assign({ holder, ready: false, seed: Math.random() * 10, bones: {} }, cfg);
+  CHARACTERS.push(c);
+  colliders.push({ x: cfg.x, z: cfg.z, r: 0.7 });
+  gltfLoader.load(cfg.file, gltf => {
+    const model = gltf.scene;
+    model.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = true; } });
+    toLambert(model);
+    holder.add(model);
+    // The bundled 0.3s clips are frozen rest poses — never play them.
+    if (!cfg.quadruped) dropArms(holder);
+    // normalize to the target height using the real skinned bounds
+    let box = skinnedWorldBox(holder);
+    const size = box.getSize(new THREE.Vector3());
+    model.scale.multiplyScalar(cfg.height / size.y);
+    box = skinnedWorldBox(holder);
+    const ctr = box.getCenter(new THREE.Vector3());
+    model.position.x -= ctr.x - holder.position.x;
+    model.position.z -= ctr.z - holder.position.z;
+    model.position.y -= box.min.y - holder.position.y;
+    holder.traverse(o => { if (o.isBone) c.bones[o.name] = o; });
+    ['Spine02', 'Spine', 'Head', 'neck'].forEach(n => { if (c.bones[n]) c.bones[n].userData.baseQ = c.bones[n].quaternion.clone(); });
+    c.model = model;
+    c.ready = true;
+  }, undefined, err => console.warn('Character failed to load:', cfg.file, err));
+  return c;
+}
+// ---------- the player's own body, for the fireside scene ----------
+// Warming your hands at the plaza fire swings the camera out to third person
+// and shows your avatar doing exactly that.
+const AVATAR = { ready: false, loading: false, holder: null };
+let cine = null;
+function ensureAvatar(cb) {
+  if (AVATAR.ready) return cb();
+  if (AVATAR.loading) return;
+  AVATAR.loading = true;
+  gltfLoader.load('assets/player_avatar.glb', gltf => {
+    const model = gltf.scene;
+    model.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = true; } });
+    toLambert(model);
+    const holder = new THREE.Group();
+    holder.add(model);
+    let box = skinnedWorldBox(holder);
+    model.scale.multiplyScalar(1.76 / box.getSize(new THREE.Vector3()).y);
+    box = skinnedWorldBox(holder);
+    const ctr = box.getCenter(new THREE.Vector3());
+    model.position.x -= ctr.x; model.position.z -= ctr.z; model.position.y -= box.min.y;
+    holder.visible = false;
+    scene.add(holder);
+    AVATAR.holder = holder;
+    AVATAR.ready = true;
+    cb();
+  }, undefined, err => { console.warn('avatar failed:', err); AVATAR.loading = false; });
+}
+function poseWarmHands(holder) {
+  holder.updateMatrixWorld(true);
+  const fwd = new THREE.Vector3(Math.sin(holder.rotation.y), 0, Math.cos(holder.rotation.y));
+  ['Left', 'Right'].forEach(side => {
+    let arm = null, fore = null;
+    holder.traverse(o => { if (o.isBone) { if (o.name === side + 'Arm') arm = o; if (o.name === side + 'ForeArm') fore = o; } });
+    if (!arm || !fore) return;
+    const a = arm.getWorldPosition(new THREE.Vector3());
+    const f = fore.getWorldPosition(new THREE.Vector3());
+    const cur = f.clone().sub(a).normalize();
+    const des = fwd.clone().multiplyScalar(0.9).add(new THREE.Vector3(0, -0.42, 0)).normalize();
+    const q = new THREE.Quaternion().setFromUnitVectors(cur, des);
+    const pwq = arm.parent.getWorldQuaternion(new THREE.Quaternion());
+    arm.quaternion.premultiply(pwq.clone().invert().multiply(q).multiply(pwq));
+    holder.updateMatrixWorld(true);
+  });
+}
+function startWarmScene() {
+  if (cine) return;
+  ensureAvatar(() => {
+    const h = AVATAR.holder;
+    const fy = Math.atan2(0 - player.x, 0 - player.z);   // face the fire
+    h.position.set(player.x, ground(player.x, player.z), player.z);
+    h.rotation.y = fy;
+    dropArms(h);          // reset to rest pose first
+    poseWarmHands(h);
+    h.visible = true;
+    player.buffT = Math.max(player.buffT, 25);
+    SFX.buy();
+    toast('🔥 HEARTHSIDE WARMTH — speed up 25s');
+    cine = { t: 0, baseA: fy + Math.PI - 0.7 };
+  });
+}
+
+const _q = new THREE.Quaternion(), _e = new THREE.Euler();
+function idleCharacter(c, tt, dt) {
+  if (!c.ready) return;
+  // breathing + subtle head life
+  const s = c.seed;
+  const breathe = Math.sin(tt * 1.5 + s) * 0.022;
+  if (c.bones.Spine02 && c.bones.Spine02.userData.baseQ) {
+    _e.set(breathe, 0, 0);
+    c.bones.Spine02.quaternion.copy(c.bones.Spine02.userData.baseQ).multiply(_q.setFromEuler(_e));
+  }
+  if (c.bones.Head && c.bones.Head.userData.baseQ) {
+    _e.set(Math.sin(tt * 0.9 + s * 2) * 0.04, Math.sin(tt * 0.55 + s) * 0.1, 0);
+    c.bones.Head.quaternion.copy(c.bones.Head.userData.baseQ).multiply(_q.setFromEuler(_e));
+  }
+  if (c.quadruped && c.model) c.model.scale.y = c.model.scale.x * (1 + Math.sin(tt * 2 + s) * 0.012);
+  // face the player when close, otherwise return to home orientation
+  const d = Math.hypot(player.x - c.x, player.z - c.z);
+  const want = d < 9 ? Math.atan2(player.x - c.x, player.z - c.z) : (c.face || 0);
+  let diff = want - c.holder.rotation.y;
+  while (diff > Math.PI) diff -= Math.PI * 2; while (diff < -Math.PI) diff += Math.PI * 2;
+  c.holder.rotation.y += diff * Math.min(1, dt * 3.5);
+}
+
+// ---------- economy / favors ----------
+const toastEl = document.getElementById('toast');
+let toastT = null;
+const toast = (msg) => { toastEl.textContent = msg; toastEl.style.opacity = '1'; clearTimeout(toastT); toastT = setTimeout(() => toastEl.style.opacity = '0', 2800); };
+const dgTok = document.getElementById('dg-tok');
+const setTokens = n => { save.tokens = n; dgTok.textContent = '◈ ' + n; persist(); };
+setTokens(save.tokens);
+function reward(id, amount, msg) {
+  if (save.quests[id] === 'done') return;
+  save.quests[id] = 'done'; setTokens(save.tokens + amount); persist();
+  toast(msg + '  ·  ◈ +' + amount); SFX.fanfare();
+}
+function meet(short) {
+  if (save.met[short]) return;
+  save.met[short] = 1; persist();
+  if (Object.keys(save.met).length >= 4) reward('meet', 50, 'THE VILLAGE KNOWS YOU');
+}
+const addXp = n => { save.xp = (save.xp || 0) + n; persist(); };
+
+// ========== COLLECTIBLES: gatherable resources scattered across the vale ==========
+const ITEM_DEFS = {
+  wood:   { c: 0x9a6a3a, n: 'Firewood', sell: 2 },
+  herb:   { c: 0x6be86b, n: 'Herb',     sell: 3 },
+  mush:   { c: 0xcf7ad0, n: 'Mushroom', sell: 3 },
+  ore:    { c: 0x9aa8c0, n: 'Ore',      sell: 4 },
+  berry:  { c: 0xe86b8a, n: 'Berries',  sell: 2 },
+  coin:   { c: 0xFFD75E, n: 'Lost Coin',sell: 5 },
+  feather:{ c: 0xf2efe0, n: 'Feather',  sell: 3 },
+  rune:   { c: 0x8AD4FF, n: 'Runestone',sell: 6 },
+};
+const itemMats = {};
+for (const k in ITEM_DEFS) itemMats[k] = new THREE.MeshBasicMaterial({ color: ITEM_DEFS[k].c });
+function pickGeo(kind) {
+  switch (kind) {
+    case 'wood': return new THREE.BoxGeometry(0.72, 0.26, 0.26);
+    case 'ore': case 'rune': return new THREE.OctahedronGeometry(0.4, 0);
+    case 'coin': return new THREE.CylinderGeometry(0.32, 0.32, 0.06, 12);
+    case 'mush': return new THREE.ConeGeometry(0.3, 0.42, 8);
+    case 'feather': return new THREE.ConeGeometry(0.12, 0.72, 4);
+    default: return new THREE.IcosahedronGeometry(0.32, 0);
+  }
+}
+const PICKUPS = [];
+function scatter(kind, n, cx, cz, spread) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * 6.28, r = Math.sqrt(Math.random()) * spread;
+    const x = cx + Math.cos(a) * r, z = cz + Math.sin(a) * r;
+    if (Math.hypot(x, z) < 6) continue;           // keep the plaza clear
+    const m = new THREE.Mesh(pickGeo(kind), itemMats[kind]);
+    m.position.set(x, ground(x, z) + 0.55, z);
+    scene.add(m);
+    PICKUPS.push({ kind, x, z, mesh: m, taken: false, ph: Math.random() * 6.28 });
+  }
+}
+scatter('wood', 16, 6, 46, 120);
+scatter('herb', 16, -6, 22, 110);
+scatter('mush', 12, 14, 118, 70);
+scatter('berry', 14, -4, -8, 100);
+scatter('coin', 18, 0, 6, 150);
+scatter('feather', 6, -35, 26, 46);
+scatter('feather', 6, 24, 132, 44);
+scatter('ore', 12, -74, -20, 40);
+scatter('rune', 10, -82, 12, 40);
+const invCount = k => save.inv[k] || 0;
+function giveItem(kind) {
+  save.inv[kind] = invCount(kind) + 1; persist();
+  toast('＋ ' + ITEM_DEFS[kind].n + '  (' + save.inv[kind] + ')');
+}
+
+// ========== QUEST / BOUNTY ENGINE ==========
+const QUESTS = {};
+const BOARD_IDS = [];
+function defBounty(o) { QUESTS[o.id] = o; BOARD_IDS.push(o.id); }
+const qStateOf = id => save.qstate[id] || 'none';
+function acceptBounty(id) {
+  if (qStateOf(id) !== 'none') return;
+  save.qstate[id] = 'active'; persist();
+  toast('QUEST ACCEPTED — ' + QUESTS[id].title); SFX.blip();
+}
+function bountyDone(q) {
+  if (q.need) { for (const k in q.need) if (invCount(k) < q.need[k]) return false; return true; }
+  if (q.visit) return !!(save._visited && save._visited[q.id]);
+  if (q.claim) return !!save.claimed[q.id];
+  if (q.rubble) return RUBBLE.filter(r => r.read).length >= q.rubble;
+  if (q.drinks) return save.drinks >= q.drinks;
+  return false;
+}
+function bountyProgress(q) {
+  if (q.need) { const k = Object.keys(q.need)[0]; return Math.min(invCount(k), q.need[k]) + '/' + q.need[k]; }
+  if (q.rubble) return RUBBLE.filter(r => r.read).length + '/' + q.rubble;
+  if (q.drinks) return Math.min(save.drinks, q.drinks) + '/' + q.drinks;
+  return '';
+}
+function completeBounty(id) {
+  const q = QUESTS[id];
+  if (q.need) for (const k in q.need) save.inv[k] = invCount(k) - q.need[k];  // consume
+  save.qstate[id] = 'done'; setTokens(save.tokens + q.reward); addXp(q.xp || 5); persist();
+  toast('✓ ' + q.title + '  ·  ◈ +' + q.reward); SFX.fanfare();
+}
+function bountyTarget(q) {
+  if (q.visit) return { x: q.visit.x, z: q.visit.z, label: q.title };
+  if (q.claim) return { x: q.claim.x, z: q.claim.z, label: q.title };
+  return null;
+}
+
+// --- generate the board's bounties ---
+const ITEMS_ORDER = ['wood', 'herb', 'mush', 'ore', 'berry', 'coin', 'feather', 'rune'];
+const GATHER_TIERS = [[4, 10], [8, 22], [12, 42]];
+ITEMS_ORDER.forEach(k => GATHER_TIERS.forEach(([cnt, rw], ti) =>
+  defBounty({ id: 'g_' + k + '_' + ti, title: 'Gather ' + cnt + ' ' + ITEM_DEFS[k].n, need: { [k]: cnt }, reward: rw, xp: 6 + ti * 4 })));
+const VISITS = [
+  { id: 'v_pond', name: 'the Pond', x: -35, z: 26, r: 9 },
+  { id: 'v_bridge', name: 'the Rune Bridge', x: 0, z: -34, r: 7 },
+  { id: 'v_tower', name: 'the Watchtower', x: 12, z: -55, r: 9 },
+  { id: 'v_shrine', name: 'the Shrine', x: -26, z: -24, r: 7 },
+  { id: 'v_guardian', name: 'the Standing Guardian', x: -100, z: -8, r: 15 },
+  { id: 'v_farm', name: 'the Farmstead', x: 26, z: 130, r: 16 },
+  { id: 'v_east', name: 'the East Homestead', x: 56, z: 4, r: 9 },
+  { id: 'v_west', name: 'the West Cottage', x: -46, z: -30, r: 9 },
+  { id: 'v_northwood', name: 'the North Wood', x: 2, z: 172, r: 20 },
+  { id: 'v_pondside', name: 'the Pondside House', x: -56, z: 26, r: 9 },
+];
+VISITS.forEach(v => defBounty({ id: v.id, title: 'Scout ' + v.name, visit: v, reward: 12, xp: 8 }));
+const CLAIMS = [
+  { id: 'c_tower', name: 'the Watchtower', x: 12, z: -49, bx: 12, bz: -49 },
+  { id: 'c_guardian', name: 'the Standing Guardian', x: -96, z: -1, bx: -96, bz: -1 },
+  { id: 'c_farm', name: 'the Farmstead', x: 26, z: 122, bx: 26, bz: 122 },
+  { id: 'c_bridge', name: 'the Rune Bridge', x: 0, z: -44, bx: 0, bz: -44 },
+];
+CLAIMS.forEach(c => defBounty({ id: c.id, title: 'Raise Veridia’s banner at ' + c.name, claim: c, reward: 28, xp: 15 }));
+defBounty({ id: 'x_ale', title: 'Share 3 ales at the tavern', drinks: 3, reward: 18, xp: 10 });
+defBounty({ id: 'x_bigwood', title: 'Stockpile 20 Firewood', need: { wood: 20 }, reward: 60, xp: 25 });
+defBounty({ id: 'x_bigore', title: 'Refine 15 Ore', need: { ore: 15 }, reward: 60, xp: 25 });
+
+// --- character quests, registered for the log/objective router ---
+const CHAR_QUESTS = [
+  { flag: 'shards', title: 'Sylla — gather 5 glow-shards', prog: () => Math.min(5, save.shards) + '/5', tgt: () => save.shards >= 5 ? { x: -24, z: -22, label: 'Return to Sylla' } : null },
+  { flag: 'letter', title: 'Sylla — deliver the letter to Rhea', tgt: () => ({ x: TAVERN_DOOR.x, z: TAVERN_DOOR.z, label: 'To the tavern' }) },
+  { flag: 'lamps', title: 'Kael — light the 4 street lamps', prog: () => save.lamps + '/4' },
+  { flag: 'posy', title: 'Rhea — pick 3 daisy posies', prog: () => (save.daisyPicked ? save.daisyPicked.filter(Boolean).length : 0) + '/3' },
+  { flag: 'beacon', title: 'Wen — light the watchtower beacon' },
+];
+
+// --- claim banners (physical, press E to raise) ---
+const BANNERS = [];
+{
+  const poleMat = new THREE.MeshLambertMaterial({ color: 0x5a4632 });
+  const clothMat = new THREE.MeshLambertMaterial({ color: 0xC24A3A, side: THREE.DoubleSide });
+  CLAIMS.forEach(c => {
+    const g = new THREE.Group();
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.11, 4.2, 8), poleMat);
+    pole.position.y = 2.1; g.add(pole);
+    const cloth = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 0.9), clothMat);
+    cloth.position.set(0.62, 3.4, 0); g.add(cloth);
+    g.position.set(c.bx, ground(c.bx, c.bz), c.bz);
+    g.visible = false;                        // only appears once you accept the claim
+    scene.add(g);
+    colliders.push({ x: c.bx, z: c.bz, r: 0.6 });
+    BANNERS.push({ c, group: g, cloth });
+  });
+}
+
+// --- gear effects ---
+let lanternLight = null;
+function equipCheck() {
+  if (save.gear.lantern && !lanternLight) {
+    lanternLight = new THREE.PointLight(0xFFD9A0, 14, 16);
+    scene.add(lanternLight);
+  }
+}
+
+// ---------- NPC definitions ----------
+const LINKS = {
+  github: 'https://github.com/trakshan-mishra/Diffcontext',
+  trade: 'https://tradetrack-ai.netlify.app',
+  movie: 'https://moviemx.pages.dev',
+  mail: 'mailto:trakshanmishra477@gmail.com',
+  linkedin: 'https://www.linkedin.com/in/trakshan-mishra-100b08206/',
+};
+const NPCS = [];
+function npc(def) { NPCS.push(spawnCharacter(def)); }
+
+// RHEA — bartender, at the tavern door
+npc({
+  name: 'RHEA · THE BARTENDER', short: 'Rhea', color: 0xFFA6C8,
+  file: 'assets/adventurer.glb', height: 1.72, x: -13.8, z: 28.6, face: 2.4,
+  lines: () => {
+    if (save.quests.letter === 'active') return [
+      'Well now — a new face. And carrying paper with the Arcanist’s seal, unless my eyes lie. Come inside, I don’t read on doorsteps.',
+      'The hearth’s lit and the ale is honeyed. Step in, traveler.',
+    ];
+    if (save.drinks > 2) return [
+      'Back again? I’m starting to think it’s not the ale you come for.',
+      'The builder of this vale? Trakshan. Ask Kael about his tracer, or Wen about the ledgers. I only keep the stories warm.',
+      'Careful on the rune bridge after dark. It glows because it remembers — that’s what Sylla says, anyway.',
+    ];
+    const out = [
+      'Welcome to the Ember Hearth, traveler. I’m Rhea — I pour the ale and I keep the stories.',
+      'Every soul in Veridia carries a piece of the builder’s tale. Mine’s the warmest, so start elsewhere and end here.',
+      'Kael’s wolf bites strangers. Mostly it bites Kael. You’ll be fine.',
+    ];
+    if (save.quests.posy === 'active') {
+      const n = DAISIES.filter(d => d.picked).length;
+      out.unshift(n >= 3 ? 'Oh, those daisies are lovely! Hand them over — the hearth table’s been bare all season.'
+        : 'The daisy bushes grow all around the village — ' + n + ' of 3 posies so far. Yellow ones, mind. Not weeds.');
+    } else if (!save.quests.posy) {
+      out.push('The hearth table could use some colour… bring me three daisy posies and I’ll make it worth the walk.');
+    }
+    return out;
+  },
+  acts: () => {
+    const a = [['ENTER THE TAVERN', enterTavern, 'gold']];
+    if (!save.quests.posy) a.push(['ACCEPT THE POSY FAVOR · ◈25', () => { save.quests.posy = 'active'; persist(); toast('FAVOR — pick 3 daisy posies (press E at daisy bushes)'); SFX.blip(); refreshDlg(); }]);
+    if (save.quests.posy === 'active' && DAISIES.filter(d => d.picked).length >= 3)
+      a.push(['GIVE THE POSIES', () => { reward('posy', 25, '🌼 THE HEARTH BLOOMS'); refreshDlg(); }, 'gold']);
+    return a;
+  },
+  onTalk: () => meet('Rhea'),
+});
+
+// WEN — shopkeeper, at the market corner
+npc({
+  name: 'WEN · KEEPER OF WARES', short: 'Wen', color: 0x8AD4FF,
+  file: 'assets/shopkeeper.glb', height: 1.78, x: 22.5, z: 13.5, face: -2.6,
+  lines: () => {
+    const out = [
+      'Ah, a customer! Wen’s Wares — finest goods this side of the stream, and the only goods this side of the stream.',
+      'I keep ledgers the way the builder keeps pipelines. He made one that reads markets live — TradeTrack Pro. OCR eyes, 94 percent, never blinks.',
+      'Numbers flow like rivers, friend. The trick is standing where they pool.',
+    ];
+    if (save.quests.beacon === 'active') out.unshift('The beacon brazier sits atop the watchtower, past the rune bridge. Press E at the tower base and the mechanism does the rest.');
+    if (save.quests.beacon === 'lit') out.unshift('Is that the beacon burning?! Ha! The caravans will see it a day out. Come, your fee.');
+    if (!save.quests.beacon) out.push('One worry, though: the watchtower beacon has sat cold for a season. Caravans miss the turn, and cold caravans buy nothing.');
+    if (save.elixirs.swift && save.elixirs.sight) out.push('You’ve bought my best. Now you walk fast and see far — like a well-tuned model, eh?');
+    return out;
+  },
+  acts: () => {
+    const a = [['TRADETRACK LIVE ↗', LINKS.trade]];
+    if (!save.quests.beacon) a.push(['ACCEPT THE BEACON FAVOR · ◈35', () => { save.quests.beacon = 'active'; persist(); toast('FAVOR — light the beacon atop the watchtower'); SFX.blip(); refreshDlg(); }, 'gold']);
+    if (save.quests.beacon === 'lit') a.push(['REPORT THE BEACON', () => { reward('beacon', 35, '🔥 THE BEACON BURNS'); refreshDlg(); }, 'gold']);
+    if (!save.elixirs.swift) a.push(['BUY SWIFTNESS · ◈25', () => { if (save.tokens < 25) return toast('NOT ENOUGH TOKENS — do a favor or two'); setTokens(save.tokens - 25); save.elixirs.swift = 1; persist(); SFX.buy(); toast('🜁 SWIFTNESS — permanent speed up'); refreshDlg(); }]);
+    if (!save.elixirs.sight) a.push(['BUY SIGHT · ◈20', () => { if (save.tokens < 20) return toast('NOT ENOUGH TOKENS — do a favor or two'); setTokens(save.tokens - 20); save.elixirs.sight = 1; persist(); SFX.buy(); toast('🜂 SIGHT — the haze recedes'); refreshDlg(); }]);
+    return a;
+  },
+  onTalk: () => meet('Wen'),
+});
+
+// KAEL — hunter, camped by the bridge's south bank, wolf at his side
+npc({
+  name: 'KAEL · THE HUNTER', short: 'Kael', color: 0x6BE8A0,
+  file: 'assets/solo_hunter.glb', height: 1.8, x: 3.5, z: -44.5, face: -0.4,
+  lines: () => {
+    if (save.quests.lamps === 'done') return [
+      'The lamps burn like honor. The village sleeps easier, lamplighter.',
+      'The builder tracks like I do. He watched a running interpreter walk its path once — DiffContext, he calls the tracer. 35,270 tokens walked in. 10,747 walked out. Nothing it kept was wasted.',
+      'Ash likes you. That’s rarer than you know.',
+    ];
+    if (save.quests.lamps === 'active') return [
+      'Walk to each dark lamp along the road and press E. ' + save.lamps + ' of 4 shine so far.',
+      'Dusk is no time for dark streets. Go on — I’ll watch the bridge.',
+    ];
+    return [
+      'Hold. …At ease — you’re no bandit. The wolf decides who crosses, anyway. Her name’s Ash.',
+      'Dusk comes, and the street lamps sit cold up in the village. Light all four and twenty tokens are yours.',
+      'You want to know about the builder? He hunts waste, like me. Ask me again when the lamps are lit.',
+      'Those floating steps east of my camp? The Arcanist’s work. I don’t trust stairs with opinions, but they hold.',
+    ];
+  },
+  acts: () => {
+    const a = [['DIFFCONTEXT ON GITHUB ↗', LINKS.github]];
+    if (!save.quests.lamps) a.push(['ACCEPT THE LAMP FAVOR · ◈20', () => { save.quests.lamps = 'active'; persist(); toast('FAVOR — light the 4 street lamps (press E at each)'); SFX.blip(); refreshDlg(); }, 'gold']);
+    return a;
+  },
+  onTalk: () => meet('Kael'),
+});
+
+// ASH — Kael's wolf. She has opinions.
+npc({
+  name: 'ASH · THE WOLF', short: 'Ash', color: 0xC9D4E8,
+  file: 'assets/wolf_gladiator.glb', height: 1.15, quadruped: true, x: 6.5, z: -43, face: -0.8,
+  lines: () => [
+    '…',
+    'The wolf regards you with ancient, judgmental eyes.',
+    'A low sound. Not quite a growl. Possibly a review.',
+    save.quests.lamps === 'done' ? 'Ash’s tail thumps once. High praise.' : 'Ash glances at the dark lamps up the road, then back at you. Pointedly.',
+  ],
+  acts: () => [['PET THE WOLF', () => { SFX.wolf(); toast(save.pets ? '🐺 Ash allows a second pat. Unprecedented.' : '🐺 Ash permits one (1) pat.'); save.pets = (save.pets || 0) + 1; persist(); }]],
+  onTalk: () => {},
+});
+
+// SYLLA — arcanist, at the staff shrine
+npc({
+  name: 'SYLLA · THE ARCANIST', short: 'Sylla', color: 0xB08AE8,
+  file: 'assets/summoner.glb', height: 1.85, x: -24, z: -22, face: 0.9,
+  lines: () => {
+    const out = [];
+    if (!save.quests.shards) return [
+      'You walk loudly for someone so small in the weave. I am Sylla. I keep the shrine, and I keep the glyphs on that bridge alive.',
+      'My lantern seeds scattered as glow-shards across the vale. Bring me five and thirty tokens are yours.',
+      'Also — this letter must reach Rhea at the tavern. My feet and her doorstep disagree. Forty tokens for the errand.',
+    ];
+    if (save.quests.shards === 'active') out.push(save.shards >= 5
+      ? 'FIVE shards! Hand them here — your reward, as promised.'
+      : 'Glow-shards drift at the village edges, past the palisade. ' + Math.min(5, save.shards) + ' of 5 so far.');
+    if (save.quests.shards === 'done') out.push('The shards hum in the shrine now. You have a gatherer’s eye.');
+    out.push('The builder? He works my kind of craft. Streams stories to every screen — MovieMX, he named it. Catalogue, auth, ads. End to end, like a well-cast spell.');
+    out.push('If you seek the builder himself… I can open a way. Paper or lightning, your choice.');
+    return out;
+  },
+  acts: () => {
+    const a = [];
+    if (!save.quests.shards) a.push(['ACCEPT SHARD FAVOR · ◈30', () => { save.quests.shards = 'active'; persist(); toast('FAVOR — gather 5 glow-shards at the village edges'); SFX.blip(); refreshDlg(); }, 'gold']);
+    if (!save.quests.letter) a.push(['CARRY THE LETTER · ◈40', () => { save.quests.letter = 'active'; persist(); toast('FAVOR — deliver the letter to Rhea at the tavern'); SFX.blip(); refreshDlg(); }, 'gold']);
+    if (save.quests.shards === 'active' && save.shards >= 5) a.push(['TURN IN SHARDS', () => { reward('shards', 30, '✦ SHARDS DELIVERED'); refreshDlg(); }, 'gold']);
+    a.push(['MOVIEMX LIVE ↗', LINKS.movie]);
+    a.push(['EMAIL THE BUILDER ↗', LINKS.mail]);
+    a.push(['LINKEDIN ↗', LINKS.linkedin]);
+    return a;
+  },
+  onTalk: () => meet('Sylla'),
+});
+
+// ---- villager quest CHAINS: each neighbour has a run of tasks, then a daily ----
+const VGIVERS = { Brogg: { x: 28, z: 126 }, Mira: { x: 25, z: 16.5 }, Tomas: { x: 13, z: 37 }, Bren: { x: -29.5, z: 23 } };
+const VCHAINS = {
+  Brogg: [
+    { id: 'brogg_1', kind: 'herb', count: 6, reward: 34, xp: 15, title: 'Brogg — cleanse the blighted field (6 Herb)', ask: 'The east field went grey overnight — blighted. Bring Brogg 6 herbs to salt the soil.', thanks: '🌱 The blight lifts — the field breathes again' },
+    { id: 'brogg_2', kind: 'wood', count: 10, reward: 42, xp: 20, title: 'Brogg — posts for the harvest pen (10 Firewood)', ask: 'Field’s healing. Now Brogg needs fence-posts before the turnips walk off. Ten stout branches.', thanks: '🌾 The pen stands — Brogg shares the first turnips' },
+    { id: 'brogg_daily', kind: 'mush', count: 5, reward: 20, xp: 10, daily: true, title: 'Brogg — mushrooms for the stew (5, daily)', ask: 'Every day Brogg makes stew, every day Brogg needs mushrooms. Bring five, eat well.', thanks: '🍲 Brogg’s stew pot is full again' },
+  ],
+  Mira: [
+    { id: 'mira_1', kind: 'berry', count: 5, reward: 28, xp: 12, title: 'Mira — berries for the festival pie (5)', ask: 'The harvest festival is tomorrow and my berry pie has NO berries. Five, please, before I panic.', thanks: '🥧 Mira’s festival pie is saved' },
+    { id: 'mira_2', kind: 'herb', count: 6, reward: 30, xp: 15, title: 'Mira — herbs for winter preserves (6)', ask: 'The pie was a triumph. Now — winter preserves. Six pinches of herb and the pantry’s set.', thanks: '🫙 Mira’s shelves are stocked for winter' },
+    { id: 'mira_daily', kind: 'berry', count: 4, reward: 18, xp: 10, daily: true, title: 'Mira — market berries (4, daily)', ask: 'The stall sells out of berries by noon. Bring four each morning and I’ll pay fair.', thanks: '🧺 Mira’s berry basket is full' },
+  ],
+  Tomas: [
+    { id: 'tomas_1', kind: 'wood', count: 8, reward: 30, xp: 12, title: 'Tomas — firewood for the cold hearths (8)', ask: 'Every hearth on the north row went cold and the wood-store’s bare. Eight branches would save us.', thanks: '🔥 The cold hearths burn again' },
+    { id: 'tomas_2', kind: 'ore', count: 6, reward: 36, xp: 18, title: 'Tomas — ore for the forge (6)', ask: 'The smith needs ore to reforge the plough-blades. Six chunks from the western crags should do.', thanks: '⚒ The ploughs are mended — spring is ready' },
+    { id: 'tomas_daily', kind: 'wood', count: 6, reward: 18, xp: 10, daily: true, title: 'Tomas — kindling run (6, daily)', ask: 'Bring me six branches a day and no hearth in Veridia goes cold. Deal?', thanks: '🪵 The kindling box is topped up' },
+  ],
+  Bren: [
+    { id: 'bren_1', kind: 'feather', count: 4, reward: 26, xp: 12, title: 'Bren — feathers for fletching (4)', ask: 'My hands still fletch though my eyes are gone. Bring feathers from the pond reeds and I’ll arm the watch.', thanks: '🏹 Old Bren fletches his finest arrows' },
+    { id: 'bren_2', kind: 'rune', count: 3, reward: 40, xp: 22, title: 'Bren — runestones for ward-arrows (3)', ask: 'There’s old talk of ward-arrows — a runestone bound to each shaft. Bring three from the old cairns and we’ll try.', thanks: '✨ The ward-arrows hum on the string' },
+    { id: 'bren_daily', kind: 'feather', count: 3, reward: 16, xp: 10, daily: true, title: 'Bren — daily fletching (3, daily)', ask: 'The watch looses arrows faster than I fletch them. Three feathers a day keeps us armed.', thanks: '🎯 Bren’s quiver is refilled' },
+  ],
+};
+Object.entries(VCHAINS).forEach(([short, arr]) => arr.forEach(q => { q.giver = VGIVERS[short]; }));
+function currentVQ(short) { for (const q of VCHAINS[short]) if (save.quests[q.id] !== 'done') return q; return null; }
+function resetDailies() {
+  Object.values(VCHAINS).forEach(arr => arr.forEach(q => { if (q.daily && save.quests[q.id] === 'done') delete save.quests[q.id]; }));
+}
+function sqActs(short) {
+  const q = currentVQ(short);
+  if (!q) return [];
+  if (!save.quests[q.id]) return [['HELP · Bring ' + q.count + ' ' + ITEM_DEFS[q.kind].n + ' · ◈' + q.reward, () => { save.quests[q.id] = 'active'; persist(); toast('QUEST — bring ' + q.count + ' ' + ITEM_DEFS[q.kind].n); SFX.blip(); refreshDlg(); }, 'gold']];
+  if (invCount(q.kind) >= q.count) return [['DELIVER ' + q.count + ' ' + ITEM_DEFS[q.kind].n, () => { save.inv[q.kind] = invCount(q.kind) - q.count; save.quests[q.id] = 'done'; setTokens(save.tokens + q.reward); addXp(q.xp || 10); toast(q.thanks + '  ·  ◈ +' + q.reward); SFX.fanfare(); persist(); refreshDlg(); }, 'gold']];
+  return [['◷ Gathered ' + invCount(q.kind) + '/' + q.count + ' ' + ITEM_DEFS[q.kind].n, () => toast('Find ' + ITEM_DEFS[q.kind].n + ' in the vale — track it with J')]];
+}
+function vqLine(short) { const q = currentVQ(short); if (!q) return 'That’s all the help I need today — come back tomorrow, there’s always more work in the vale.'; return save.quests[q.id] === 'active' ? '(Still owed: ' + Math.min(invCount(q.kind), q.count) + '/' + q.count + ' ' + ITEM_DEFS[q.kind].n + ')' : q.ask; }
+
+// ---- villagers, each with a small story quest ----
+npc({
+  name: 'MIRA', short: 'Mira', color: 0xF0C8A0,
+  file: 'assets/villager_female.glb', height: 1.68, x: 25, z: 16.5, face: -2.9,
+  lines: () => [
+    'Oh — the wandering hand! ' + vqLine('Mira'),
+    'Rhea’s honeyed ale is worth every token. Tell her Mira sent you — changes nothing, but tell her.',
+    'The builder passed through the market this spring. Fixed Wen’s ledger in one afternoon. An AFTERNOON.',
+  ],
+  acts: () => sqActs('Mira'),
+  onTalk: () => meet('Mira'),
+});
+npc({
+  name: 'TOMAS', short: 'Tomas', color: 0xA0C8F0,
+  file: 'assets/villager_male.glb', height: 1.78, x: 13, z: 37, face: 0.4,
+  lines: () => [
+    'Good to see you. ' + vqLine('Tomas'),
+    'Kael let me pat the wolf once. Best day of my year. My wife knows and accepts this.',
+    'They say the old keep had a hundred towers. Now a goblin counts what’s left. Somebody should.',
+  ],
+  acts: () => sqActs('Tomas'),
+  onTalk: () => meet('Tomas'),
+});
+npc({
+  name: 'OLD BREN', short: 'Bren', color: 0xC8C0A8,
+  file: 'assets/villager_elder.glb', height: 1.62, x: -29.5, z: 23, face: 2.2,
+  lines: () => [
+    'Ah, the traveller. ' + vqLine('Bren'),
+    'Sixty years I’ve fished this pond. Caught the same boot four times. Old friends now, the boot and I.',
+    'The lamps used to burn all night when I was a boy. Kael’s trying to bring that back. Good lad. Grim, but good.',
+  ],
+  acts: () => sqActs('Bren'),
+  onTalk: () => meet('Bren'),
+});
+npc({
+  name: 'PETRO', short: 'Petro', color: 0xD0A880,
+  file: 'assets/villager_medieval.glb', height: 1.75, x: 5, z: 4.5, face: -0.3,
+  lines: () => [
+    'Evening. I mind the plaza fire. It minds me back. We have an arrangement.',
+    'Warm your hands if you like — press E by the pit. Everyone does it. Even the wolf, once.',
+    'Sylla says the fire remembers everyone who’s sat by it. I sit by it a lot. I like being remembered.',
+  ],
+  acts: () => [],
+  onTalk: () => meet('Petro'),
+});
+// BROGG — the orc farmhand who keeps the northern farmstead
+npc({
+  name: 'BROGG · THE FARMHAND', short: 'Brogg', color: 0x8AC86B, static: true,
+  file: 'assets/orc_warrior.glb', height: 2.05, x: 28, z: 126, face: Math.PI,
+  lines: () => [
+    'Hrr — a traveller, all the way north. Good. ' + vqLine('Brogg'),
+    'Brogg is not from the vale. Came over the western hills one winter, half-starved. The vale fed Brogg. Now Brogg feeds the vale. Fair is fair.',
+    'The builder? Even Brogg knows that name. Traced a running machine and burned the waste off it. Brogg respects anyone who hates waste. Waste is how fields die.',
+  ],
+  acts: () => sqActs('Brogg'),
+  onTalk: () => meet('Brogg'),
+});
+
+// GRUBNAK — the goblin who keeps the Standing Guardian company
+npc({
+  name: 'GRUBNAK · KEEPER OF THE GUARDIAN', short: 'Grubnak', color: 0x9AE86B,
+  file: 'assets/goblin_shaman.glb', height: 1.5, quadruped: true, x: -96, z: -4, face: 0.5,
+  lines: () => [
+    'Grrk — a live one. Few walk this far west. Grubnak keeps the Guardian company. Someone must.',
+    'The old city fell in a single night — towers knelt, stone cracked. Only the Guardian still stands. Grubnak guards the guard.',
+    'The builder? Even here his name is carved on the plinth — the one who traces what runs and burns what wastes.',
+  ],
+  acts: () => [],
+  onTalk: () => meet('Grubnak'),
+});
+
+
+// THE TRAVELLER'S MONUMENT — a standing stone in the village square
+placeWorldAsset('assets/crystal_staff.glb', [{ x: 11, z: 7, s: 2.4, r: 0.6, collider: 0.9 }]);
+{
+  const glow = new THREE.PointLight(0x8AD4FF, 12, 12);
+  glow.position.set(11, 2.4, 7); scene.add(glow);
+  window.__altarGlow = glow;
+}
+NPCS.push({
+  name: 'THE TRAVELLER’S MONUMENT', short: 'Monument', color: 0x8AD4FF,
+  x: 11, z: 7,
+  lines: () => [
+    'Wind-carved words circle the standing stone: EVERY SYSTEM IS A PLACE. WALK IT.',
+    'The glyphs list the builder’s makings like constellations — DiffContext the tracer. TradeTrack the ledger-hawk. MovieMX the storyteller.',
+    'A smaller rune, freshly cut: trakshanmishra477@gmail.com — open to founding-engineer and AI/ML roles.',
+    'At dusk the whole vale glows like a circuit. The builder likes that metaphor. The stone tolerates it.',
+  ],
+  acts: () => [['GITHUB ↗', LINKS.github], ['EMAIL THE BUILDER ↗', LINKS.mail], ['LINKEDIN ↗', LINKS.linkedin]],
+  onTalk: () => meet('Monument'),
+});
+
+// ========== THE NOTICE BOARD — accept bounty quests ==========
+{
+  const woodMat = new THREE.MeshLambertMaterial({ color: 0x6b5334 });
+  const boardMat = new THREE.MeshLambertMaterial({ color: 0x9c7c4e });
+  const bx = 7, bz = 12;
+  const g = new THREE.Group();
+  [-0.9, 0.9].forEach(dx => { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.13, 2.4, 7), woodMat); p.position.set(dx, 1.2, 0); g.add(p); });
+  const panel = new THREE.Mesh(new THREE.BoxGeometry(2.3, 1.5, 0.14), boardMat); panel.position.y = 1.9; g.add(panel);
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.12, 0.7), woodMat); roof.position.set(0, 2.72, 0); roof.rotation.x = 0.12; g.add(roof);
+  for (let i = 0; i < 4; i++) { const note = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.5), new THREE.MeshLambertMaterial({ color: 0xF2ECD8 })); note.position.set(-0.7 + (i % 2) * 0.9 + rand(i, 3) * 0.15, 2.15 - Math.floor(i / 2) * 0.55, 0.08); note.rotation.z = (rand(i, 9) - 0.5) * 0.2; g.add(note); }
+  g.position.set(bx, ground(bx, bz), bz); scene.add(g);
+  colliders.push({ x: bx, z: bz, r: 1.1 });
+  NPCS.push({
+    name: 'THE NOTICE BOARD', short: 'Board', color: 0xF2ECD8, x: bx, z: bz,
+    lines: () => {
+      const avail = BOARD_IDS.filter(id => qStateOf(id) === 'none').length;
+      const active = BOARD_IDS.filter(id => qStateOf(id) === 'active').length;
+      const done = BOARD_IDS.filter(id => qStateOf(id) === 'done').length;
+      return [
+        'The Veridia notice board — bounties for a travelling hand. Gather, scout, and claim ground for the vale.',
+        avail + ' posted · ' + active + ' in progress · ' + done + ' completed. Press a number to accept.',
+        'Board coin buys gear at the stall. Gear makes the far roads survivable. Off you go.',
+      ];
+    },
+    acts: () => BOARD_IDS.filter(id => qStateOf(id) === 'none').slice(0, 8)
+      .map(id => ['ACCEPT · ' + QUESTS[id].title + ' · ◈' + QUESTS[id].reward, () => { acceptBounty(id); refreshDlg(); }]),
+    onTalk: () => meet('Board'),
+  });
+}
+
+// ========== THE TRADER'S STALL — spend tokens ==========
+function spend(n) { if (save.tokens < n) { toast('NOT ENOUGH TOKENS'); return false; } setTokens(save.tokens - n); SFX.buy(); return true; }
+const buyGear = (key, msg, cost) => () => { if (save.gear[key]) return; if (spend(cost)) { save.gear[key] = 1; persist(); equipCheck(); toast(msg); } refreshDlg(); };
+{
+  const woodMat = new THREE.MeshLambertMaterial({ color: 0x6b5334 });
+  const clothMat = new THREE.MeshLambertMaterial({ color: 0x3E6B8A });
+  const sx = -7, sz = 13;
+  const g = new THREE.Group();
+  const top = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.16, 1.3), woodMat); top.position.y = 1.0; g.add(top);
+  [[-1.1, -0.5], [1.1, -0.5], [-1.1, 0.5], [1.1, 0.5]].forEach(([lx, lz]) => { const leg = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.0, 0.12), woodMat); leg.position.set(lx, 0.5, lz); g.add(leg); });
+  const canopy = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.1, 1.6), clothMat); canopy.position.set(0, 2.3, 0); canopy.rotation.x = 0.1; g.add(canopy);
+  [-1.3, 1.3].forEach(dx => { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.3, 6), woodMat); p.position.set(dx, 1.15, -0.6); g.add(p); });
+  g.position.set(sx, ground(sx, sz), sz); scene.add(g);
+  colliders.push({ x: sx, z: sz, r: 1.3 });
+  NPCS.push({
+    name: 'THE TRADER’S STALL', short: 'Trader', color: 0x8AD4FF, x: sx, z: sz,
+    lines: () => [
+      'Traveller! Aldric the trader, at your service. I buy what you gather and sell what keeps you breathing.',
+      'A lantern for the dark. A charm against the night-chill. Boots that never tire. And a hot meal, always.',
+      'Coin in, coin out — that is how a wanderer becomes a name. What will it be?',
+    ],
+    acts: () => {
+      const a = [];
+      if (!save.gear.lantern) a.push(['BUY Lantern · ◈30', buyGear('lantern', '🏮 Lantern — a light that follows you', 30)]);
+      if (!save.gear.warding) a.push(['BUY Warding Charm · ◈40', buyGear('warding', '🜂 Warding — the night cannot chill you', 40)]);
+      if (!save.gear.boots) a.push(['BUY Sturdy Boots · ◈35', buyGear('boots', '👢 Boots — leap higher, tire slower', 35)]);
+      a.push(['HOT MEAL · ◈4 — restore vigor', () => { if (spend(4)) { player.hp = 100; toast('🍲 A hot meal — vigor restored'); } refreshDlg(); }]);
+      ITEMS_ORDER.forEach(k => { const c = invCount(k); if (c > 0) a.push(['SELL ' + c + ' ' + ITEM_DEFS[k].n + ' · ◈' + (c * ITEM_DEFS[k].sell), () => { setTokens(save.tokens + c * ITEM_DEFS[k].sell); save.inv[k] = 0; persist(); SFX.buy(); toast('Sold ' + c + ' ' + ITEM_DEFS[k].n); refreshDlg(); }]); });
+      return a;
+    },
+    onTalk: () => meet('Trader'),
+  });
+}
+
+// ---------- glow-shards ----------
+const SHARDS = [];
+{
+  const spots = [[-34, 20], [33, 28], [-36, -22], [38, -34], [16, -60], [-18, -52], [46, -6], [-42, 31], [50, -71], [56, -77]];
+  spots.forEach(([x, z], i) => {
+    const m = new THREE.Mesh(new THREE.TetrahedronGeometry(0.5, 0), new THREE.MeshBasicMaterial({ color: 0x6BE8A0 }));
+    m.position.set(x, ground(x, z) + 1.1, z); scene.add(m);
+    const halo = new THREE.Mesh(new THREE.SphereGeometry(0.85, 8, 6), new THREE.MeshBasicMaterial({ color: 0x6BE8A0, transparent: true, opacity: 0.15, blending: THREE.AdditiveBlending, depthWrite: false }));
+    halo.position.copy(m.position); scene.add(halo);
+    SHARDS.push({ mesh: m, halo, x, z, taken: false });
+  });
+}
+
+// ---------- player & controls ----------
+const player = { x: 0, z: 9, yaw: Math.PI, pitch: -0.02, vx: 0, vz: 0, buffT: 0, jy: 0, vy: 0, onGround: true, hp: 100, st: 100 };
+equipCheck();
+const keys = {};
+addEventListener('keydown', e => { const k = e.key.toLowerCase(); keys[k] = true; if (['arrowup', 'arrowdown', ' '].includes(k)) e.preventDefault(); onKey(k); });
+addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+const startEl = document.getElementById('start');
+let started = false;
+const tryLock = () => { try { const p = renderer.domElement.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (e) {} };
+function startGame() {
+  if (started) return;
+  started = true; startEl.style.opacity = '0'; setTimeout(() => startEl.style.display = 'none', 600);
+  SFX.boot(); if (SFX.ctx && SFX.ctx.state === 'suspended') SFX.ctx.resume();
+  if (!isTouch) tryLock();
+}
+document.getElementById('enter').addEventListener('click', startGame);
+startEl.addEventListener('pointerup', startGame);
+addEventListener('keydown', e => { if (!started && (e.key === 'Enter' || e.key === ' ')) startGame(); });
+let plFailed = false;
+renderer.domElement.addEventListener('click', () => { if (started && !isTouch && !document.pointerLockElement && !plFailed) tryLock(); });
+document.addEventListener('pointerlockerror', () => { plFailed = true; });
+let dragging = false, lastMX = 0, lastMY = 0;
+addEventListener('mousemove', e => {
+  if (document.pointerLockElement) {
+    player.yaw -= e.movementX * 0.0023;
+    player.pitch = Math.max(-1.2, Math.min(0.7, player.pitch - e.movementY * 0.0021));
+  } else if (dragging) {
+    player.yaw -= (e.clientX - lastMX) * 0.004;
+    player.pitch = Math.max(-1.2, Math.min(0.7, player.pitch - (e.clientY - lastMY) * 0.0035));
+    lastMX = e.clientX; lastMY = e.clientY;
+  }
+});
+renderer.domElement.addEventListener('mousedown', e => { dragging = true; lastMX = e.clientX; lastMY = e.clientY; });
+addEventListener('mouseup', () => dragging = false);
+const mkStick = (el, cb) => {
+  const knob = el.querySelector('.knob');
+  let id = null, cx = 0, cy = 0;
+  el.addEventListener('pointerdown', e => { id = e.pointerId; const r = el.getBoundingClientRect(); cx = r.left + r.width / 2; cy = r.top + r.height / 2; el.setPointerCapture(id); });
+  el.addEventListener('pointermove', e => { if (e.pointerId !== id) return; const dx = Math.max(-1, Math.min(1, (e.clientX - cx) / 42)), dy = Math.max(-1, Math.min(1, (e.clientY - cy) / 42)); knob.style.transform = `translate(${dx * 30}px,${dy * 30}px)`; cb(dx, dy); });
+  const end = e => { if (e.pointerId !== id) return; id = null; knob.style.transform = 'none'; cb(0, 0); };
+  el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+};
+let tMove = { x: 0, y: 0 }, tLook = { x: 0, y: 0 };
+mkStick(document.getElementById('stickL'), (x, y) => { tMove.x = x; tMove.y = y; });
+mkStick(document.getElementById('stickR'), (x, y) => { tLook.x = x; tLook.y = y; });
+
+// ---------- dialogue ----------
+const dlg = document.getElementById('dialog'), dgName = document.getElementById('dg-name'), dgText = document.getElementById('dg-text'), dgAct = document.getElementById('dg-actions');
+let activeB = null, lineIdx = 0, typeTimer = null;
+const typeLine = (txt) => { clearInterval(typeTimer); let i = 0; typeTimer = setInterval(() => { dgText.textContent = txt.slice(0, i += 2); if (i >= txt.length) clearInterval(typeTimer); }, 13); };
+// options are numbered so they work under pointer lock: press 1-9
+let dgFns = [];
+const renderActs = b => {
+  dgAct.innerHTML = '';
+  dgFns = [];
+  b.acts().forEach(([label, hrefOrFn, cls], i) => {
+    const num = '[' + (i + 1) + '] ';
+    if (typeof hrefOrFn === 'function') {
+      const btn = document.createElement('button'); btn.textContent = num + label; if (cls) btn.className = cls;
+      btn.addEventListener('click', hrefOrFn); dgAct.appendChild(btn);
+      dgFns.push(hrefOrFn);
+    } else {
+      const a = document.createElement('a'); a.textContent = num + label; a.href = hrefOrFn; a.target = '_blank'; dgAct.appendChild(a);
+      dgFns.push(() => window.open(hrefOrFn, '_blank'));
+    }
+  });
+};
+const openDlg = b => {
+  activeB = b; lineIdx = 0;
+  dgName.textContent = b.name; dgName.style.color = '#' + (b.color || 0xFFC98A).toString(16).padStart(6, '0');
+  renderActs(b); typeLine(b.lines()[0]); dlg.classList.add('show'); SFX.blip();
+  setTokens(save.tokens);
+  if (b.onTalk) b.onTalk();
+};
+const refreshDlg = () => { if (activeB) { renderActs(activeB); const L = activeB.lines(); typeLine(L[Math.min(lineIdx, L.length - 1)]); setTokens(save.tokens); } };
+const closeDlg = () => { activeB = null; dlg.classList.remove('show'); };
+dlg.addEventListener('click', e => { if (activeB && e.target.tagName !== 'BUTTON' && e.target.tagName !== 'A') { const L = activeB.lines(); lineIdx = (lineIdx + 1) % L.length; typeLine(L[lineIdx]); } });
+
+// ---------- TAVERN INTERIOR ----------
+const tavernEl = document.getElementById('tavern'), tvText = document.getElementById('tv-text'), tvActs = document.getElementById('tv-actions'), mugWrap = document.getElementById('mug-wrap');
+let inTavern = false, tvTimer = null, storyIdx = 0;
+const STORIES = [
+  'A story, then. The builder cut his teeth at NextGen Invent — production apps, APIs 35 percent faster. He measures before he brags. Usually.',
+  'Another? At Modern Monk Labs he held an inference line steady at 150 requests a second. The regulars here can’t hold 150 seconds of silence.',
+  'Last one’s my favorite: VRARMR. Natural language straight into SQL, LangChain agents doing the legwork. Ship, measure, ship again — that’s his whole religion.',
+];
+const tvType = (txt) => { clearInterval(tvTimer); let i = 0; tvTimer = setInterval(() => { tvText.textContent = txt.slice(0, i += 2); if (i >= txt.length) clearInterval(tvTimer); }, 13); };
+let tvFns = [];
+function renderTavern() {
+  tvActs.innerHTML = '';
+  tvFns = [];
+  const mk = (label, fn, cls) => { const b = document.createElement('button'); b.textContent = '[' + (tvFns.length + 1) + '] ' + label; if (cls) b.className = cls; b.addEventListener('click', fn); tvActs.appendChild(b); tvFns.push(fn); };
+  if (save.quests.letter === 'active') mk('DELIVER THE LETTER', () => { reward('letter', 40, '✉ LETTER DELIVERED'); tvType('Sylla’s hand… ha! She still owes me for the winter ale. Here — your courier’s fee, traveler.'); renderTavern(); }, 'gold');
+  mk('ORDER A DRINK · ◈5', () => {
+    if (save.tokens < 5) return toast('NOT ENOUGH TOKENS');
+    setTokens(save.tokens - 5); save.drinks++; persist();
+    mugWrap.style.display = 'block'; mugWrap.classList.remove('pour'); void mugWrap.offsetWidth; mugWrap.classList.add('pour');
+    SFX.gulp();
+    setTimeout(() => { mugWrap.style.display = 'none'; player.buffT = 60; toast('🍺 TAVERN WARMTH — speed up 60s'); }, 1500);
+    tvType('One honeyed ale, coming up. Careful — it makes the road home feel shorter than it is.');
+  });
+  mk('ASK FOR A STORY', () => { tvType(STORIES[storyIdx % STORIES.length]); storyIdx++; });
+  mk('LEAVE', exitTavern);
+}
+function enterTavern() {
+  inTavern = true; tavernEl.style.display = 'block'; closeDlg();
+  tvType(save.quests.letter === 'active' ? 'Come in, come in. Now — that letter. Sylla’s seal, I’d know it anywhere.' : 'Welcome to the hearth, traveler. Sit. The ale’s honeyed and the stories are free.');
+  renderTavern(); SFX.buy();
+  if (document.pointerLockElement) document.exitPointerLock();
+}
+function exitTavern() { inTavern = false; tavernEl.style.display = 'none'; SFX.blip(); }
+
+const onKey = k => {
+  if (cine) return;
+  if (/^[1-9]$/.test(k)) {
+    const i = +k - 1;
+    if (inTavern) { if (tvFns[i]) { tvFns[i](); SFX.blip(); } return; }
+    if (activeB && dgFns[i]) { dgFns[i](); SFX.blip(); return; }
+  }
+  if (inTavern) { if (k === 'q' || k === 'escape') exitTavern(); return; }
+  if (k === 'e') {
+    if (Math.hypot(player.x - TAVERN_DOOR.x, player.z - TAVERN_DOOR.z) < 3.6) return enterTavern();
+    if (activeB) { const L = activeB.lines(); lineIdx = (lineIdx + 1) % L.length; typeLine(L[lineIdx]); SFX.blip(); return; }
+    if (Math.hypot(player.x, player.z) < 3.2) return startWarmScene();
+    if (save.quests.lamps === 'active') LAMPS.forEach(L => {
+      if (L.lit) return;
+      if (Math.hypot(player.x - L.x, player.z - L.z) < 3.5) {
+        L.lit = true; save.lamps++; persist(); SFX.pickup();
+        toast('🕯 LAMP LIT ' + save.lamps + '/4');
+        if (save.lamps >= 4) reward('lamps', 20, '🕯 ALL LAMPS BURN');
+      }
+    });
+    if (save.quests.posy === 'active') DAISIES.forEach(d => {
+      if (d.picked) return;
+      if (Math.hypot(player.x - d.x, player.z - d.z) < 3) {
+        d.picked = true;
+        if (d.model) d.model.scale.multiplyScalar(0.7);
+        save.daisyPicked = DAISIES.map(v => v.picked ? 1 : 0); persist(); SFX.pickup();
+        toast('🌼 POSY PICKED ' + DAISIES.filter(v => v.picked).length + '/3');
+      }
+    });
+    if (save.quests.beacon === 'active' && Math.hypot(player.x - BEACON.x, player.z - BEACON.z) < 5.5) {
+      save.quests.beacon = 'lit'; persist();
+      BEACON.lit = true; BEACON.flame.visible = true;
+      SFX.fanfare();
+      toast('🔥 THE BEACON IS LIT — report to Wen');
+    }
+    RUBBLE.forEach(r => {
+      if (r.read) return;
+      if (Math.hypot(player.x - r.x, player.z - r.z) < 3) {
+        r.read = true; setTokens(save.tokens + 2); SFX.pickup();
+        toast('🪨 ' + r.lore + '  ·  ◈ +2');
+      }
+    });
+    BANNERS.forEach(b => {
+      if (save.claimed[b.c.id]) return;
+      if (qStateOf(b.c.id) === 'active' && Math.hypot(player.x - b.c.bx, player.z - b.c.bz) < 3.5) {
+        save.claimed[b.c.id] = true; persist(); SFX.fanfare();
+        toast('⚑ CLAIMED FOR VERIDIA — ' + b.c.name);
+      }
+    });
+  }
+  if (k === 'j') {
+    const ids = BOARD_IDS.filter(id => qStateOf(id) === 'active');
+    if (ids.length) { const cur = ids.indexOf(save._focusId); save._focusId = ids[(cur + 1) % ids.length]; toast('◆ TRACKING · ' + QUESTS[save._focusId].title); SFX.blip(); }
+    else toast('No active bounties — visit the notice board');
+  }
+  if (k === 'q') closeDlg();
+};
+
+// ---------- COD-STYLE COMPASS ----------
+const compassEl = document.getElementById('compass');
+const hdgEl = document.getElementById('hdg'), objEl = document.getElementById('obj-line');
+const POI = [
+  { short: 'Tavern', x: -16.5, z: 29, color: '#FF9A6B' },
+  { short: 'Market', x: 25, z: 15, color: '#8AD4FF' },
+  { short: 'Shrine', x: -26, z: -24, color: '#B08AE8' },
+  { short: 'Pond', x: -35, z: 26, color: '#7ACBE8' },
+  { short: 'Bridge', x: 0, z: -34, color: '#6BE8D0' },
+  { short: 'Tower', x: 12, z: -55, color: '#6BE8A0' },
+  { short: 'Guardian', x: -100, z: -8, color: '#C8C0B2' },
+];
+const ticks = POI.map(p => {
+  const d = document.createElement('div'); d.className = 'tick mono';
+  d.innerHTML = p.short.toUpperCase() + '<div class="pip" style="background:' + p.color + '"></div>';
+  compassEl.appendChild(d); return d;
+});
+// bearing ticks every 15°, bold cardinals — north is toward the tavern (+z)
+const CARDINALS = { 0: 'N', 45: 'NE', 90: 'E', 135: 'SE', 180: 'S', 225: 'SW', 270: 'W', 315: 'NW' };
+const bearingTicks = [];
+for (let deg = 0; deg < 360; deg += 15) {
+  const d = document.createElement('div');
+  d.className = 'btick mono';
+  const c = CARDINALS[deg];
+  d.innerHTML = (c ? '<span class="card">' + c + '</span>' : '') + '<div class="bar' + (deg % 45 === 0 ? ' big' : '') + '"></div>';
+  compassEl.appendChild(d);
+  bearingTicks.push({ el: d, rad: deg * Math.PI / 180 });
+}
+const qmark = document.createElement('div');
+qmark.className = 'qmark'; qmark.textContent = '◆'; qmark.style.display = 'none';
+compassEl.appendChild(qmark);
+// 3D navigation: a soft light pillar at the objective plus breadcrumb dots
+// leading out of your feet toward it.
+const objBeam = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 1.0, 26, 10, 1, true),
+  new THREE.MeshBasicMaterial({ color: 0xFFD75E, transparent: true, opacity: 0.14, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false }));
+objBeam.visible = false; scene.add(objBeam);
+const crumbs = [];
+{
+  const cMat = new THREE.MeshBasicMaterial({ color: 0xB8E86B, transparent: true, opacity: 0.75, blending: THREE.AdditiveBlending, depthWrite: false });
+  for (let i = 0; i < 6; i++) {
+    const c = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), cMat);
+    c.visible = false; scene.add(c); crumbs.push(c);
+  }
+}
+const wrapAng = a => { while (a > Math.PI) a -= Math.PI * 2; while (a < -Math.PI) a += Math.PI * 2; return a; };
+// the active objective: first active favor in priority order
+function currentObjective() {
+  const q = save.quests;
+  if (q.letter === 'active') return { x: TAVERN_DOOR.x, z: TAVERN_DOOR.z, label: 'DELIVER THE LETTER' };
+  if (q.lamps === 'active') {
+    let best = null, bd = 1e9;
+    LAMPS.forEach(L => { if (L.lit) return; const d = Math.hypot(player.x - L.x, player.z - L.z); if (d < bd) { bd = d; best = L; } });
+    if (best) return { x: best.x, z: best.z, label: 'LIGHT THE LAMPS ' + save.lamps + '/4' };
+  }
+  if (q.posy === 'active') {
+    const n = DAISIES.filter(d => d.picked).length;
+    if (n >= 3) return { x: -13.8, z: 28.6, label: 'BRING THE POSIES TO RHEA' };
+    let best = null, bd = 1e9;
+    DAISIES.forEach(d => { if (d.picked) return; const dd = Math.hypot(player.x - d.x, player.z - d.z); if (dd < bd) { bd = dd; best = d; } });
+    if (best) return { x: best.x, z: best.z, label: 'PICK DAISIES ' + n + '/3' };
+  }
+  if (q.shards === 'active') {
+    if (save.shards >= 5) return { x: -24, z: -22, label: 'RETURN TO SYLLA' };
+    let best = null, bd = 1e9;
+    SHARDS.forEach(s => { if (s.taken) return; const d = Math.hypot(player.x - s.x, player.z - s.z); if (d < bd) { bd = d; best = s; } });
+    if (best) return { x: best.x, z: best.z, label: 'GLOW-SHARDS ' + Math.min(5, save.shards) + '/5' };
+  }
+  if (q.beacon === 'active') return { x: BEACON.x, z: BEACON.z, label: 'LIGHT THE WATCHTOWER BEACON' };
+  if (q.beacon === 'lit') return { x: 22.5, z: 13.5, label: 'REPORT THE BEACON TO WEN' };
+  if (q.relics === 'active') {
+    if ((save.relics || 0) >= 4) return { x: -88, z: -4, label: 'RETURN TO GRUBNAK' };
+    let best = null, bd = 1e9;
+    RELICS.forEach(r => { if (r.taken) return; const d = Math.hypot(player.x - r.x, player.z - r.z); if (d < bd) { bd = d; best = r; } });
+    if (best) return { x: best.x, z: best.z, label: 'AMBER RELICS ' + (save.relics || 0) + '/4' };
+  }
+  // villager quest chains — route to the giver when gathered, else nearest resource
+  for (const short in VCHAINS) {
+    const v = currentVQ(short);
+    if (!v || save.quests[v.id] !== 'active') continue;
+    if (invCount(v.kind) >= v.count) return { x: v.giver.x, z: v.giver.z, label: 'Deliver to ' + short };
+    let best = null, bd = 1e9;
+    PICKUPS.forEach(p => { if (p.taken || p.kind !== v.kind) return; const d = Math.hypot(player.x - p.x, player.z - p.z); if (d < bd) { bd = d; best = p; } });
+    if (best) return { x: best.x, z: best.z, label: v.title + ' ' + invCount(v.kind) + '/' + v.count };
+  }
+  // board bounties — the tracked one (J to cycle) first, then any active with a target
+  const actIds = BOARD_IDS.filter(id => qStateOf(id) === 'active');
+  const focus = (save._focusId && qStateOf(save._focusId) === 'active') ? save._focusId : null;
+  const order = focus ? [focus, ...actIds.filter(i => i !== focus)] : actIds;
+  for (const id of order) {
+    const qq = QUESTS[id];
+    const tgt = bountyTarget(qq);
+    if (tgt) return tgt;
+    if (qq.need) {
+      const k = Object.keys(qq.need).find(kk => invCount(kk) < qq.need[kk]);
+      if (k) {
+        let best = null, bd = 1e9;
+        PICKUPS.forEach(p => { if (p.taken || p.kind !== k) return; const d = Math.hypot(player.x - p.x, player.z - p.z); if (d < bd) { bd = d; best = p; } });
+        if (best) return { x: best.x, z: best.z, label: qq.title + ' ' + bountyProgress(qq) };
+      }
+    }
+  }
+  return null;
+}
+const interactEl = document.getElementById('interact');
+const hpFill = document.getElementById('hp-f'), stFill = document.getElementById('st-f');
+const tokN = document.getElementById('tok-n'), lvN = document.getElementById('lv-n'), qlistEl = document.getElementById('qlist');
+let hudAcc = 0, questAcc = 0;
+function renderQlog() {
+  const items = [];
+  CHAR_QUESTS.forEach(q => { const st = save.quests[q.flag]; if (st && st !== 'done') items.push({ char: true, t: q.title + (q.prog ? ' — <b>' + q.prog() + '</b>' : '') }); });
+  Object.keys(VCHAINS).forEach(short => { const q = currentVQ(short); if (q && save.quests[q.id] === 'active') items.push({ char: true, t: q.title + ' — <b>' + Math.min(invCount(q.kind), q.count) + '/' + q.count + '</b>' }); });
+  BOARD_IDS.forEach(id => { if (qStateOf(id) === 'active') { const q = QUESTS[id]; const p = bountyProgress(q); items.push({ char: false, t: q.title + (p ? ' — <b>' + p + '</b>' : '') + (save._focusId === id ? ' ◆' : '') }); } });
+  if (!items.length) { qlistEl.innerHTML = '<div class="qempty">Read the NOTICE BOARD in the plaza for bounties.</div>'; return; }
+  qlistEl.innerHTML = items.slice(0, 7).map(i => '<div class="qitem' + (i.char ? ' char' : '') + '">' + i.t + '</div>').join('') +
+    (items.length > 7 ? '<div class="qempty">+' + (items.length - 7) + ' more active…</div>' : '');
+}
+
+// ---------- loop ----------
+const clock = new THREE.Clock();
+let t = 0, stepAcc = 0, gameDay = 1, prevDayFrac = 0.5;
+let dayT = CYCLE * 0.5; // start at dusk
+function loop() {
+  requestAnimationFrame(loop);
+  const dt = Math.min(0.05, clock.getDelta()); t += dt;
+  dayT = (dayT + dt) % CYCLE;
+  { const f = dayT / CYCLE; if (f < prevDayFrac - 0.5) { gameDay++; resetDailies(); if (started) toast('☀ Day ' + gameDay + ' dawns over Veridia — daily tasks renew'); } prevDayFrac = f; }
+  applyCycle(dayT / CYCLE);
+  if (window.__sky) window.__sky.position.copy(camera.position);   // skybox rides with the player
+  const lampGlow = Math.min(1, Math.max(0, nightness * 1.4));
+  // unlit lamps still hold a faint ember so streets read at night; the favor
+  // coaxes them to full flame
+  LAMPS.forEach(L => { L.light.intensity = L.lit ? 16 * Math.max(lampGlow, 0.18) : 8 * lampGlow; });
+  flies.material.opacity = 0.9 * lampGlow;
+  if (waterMat) { waterMat.color.setHex(nightness > 0.7 ? 0x5A7488 : 0xBFD8E8); waterMat.map.offset.x = t * 0.008; waterMat.map.offset.y = t * 0.013; }
+  if (window.__shrineGlow) window.__shrineGlow.intensity = 10 + Math.sin(t * 1.8) * 3 + nightness * 8;
+
+  // third-person fireside scene: orbit the avatar, then hand the camera back
+  if (cine) {
+    cine.t += dt;
+    const h = AVATAR.holder;
+    const a = cine.baseA + Math.sin(cine.t * 0.45) * 0.4;
+    const cx = h.position.x + Math.sin(a) * 3.6, cz = h.position.z + Math.cos(a) * 3.6;
+    camera.position.set(cx, ground(cx, cz) + 2.1, cz);
+    camera.lookAt(h.position.x, h.position.y + 1.25, h.position.z);
+    if (cine.t > 6) { h.visible = false; cine = null; }
+  }
+  if (!inTavern && !cine) {
+    let fx = 0, fz = 0;
+    if (keys.w || keys.arrowup) fz += 1; if (keys.s || keys.arrowdown) fz -= 1;
+    if (keys.a || keys.arrowleft) fx -= 1; if (keys.d || keys.arrowright) fx += 1;
+    fz += -tMove.y; fx += tMove.x;
+    player.yaw -= tLook.x * dt * 2.2; player.pitch = Math.max(-1.2, Math.min(0.7, player.pitch - tLook.y * dt * 1.6));
+    const l = Math.hypot(fx, fz); if (l > 1) { fx /= l; fz /= l; }
+    const wantSprint = keys.shift && l > 0;
+    const sprinting = wantSprint && player.st > 5;
+    player.st = Math.max(0, Math.min(100, player.st + (sprinting ? (save.gear.boots ? -14 : -20) : 16) * dt));
+    if (player.buffT > 0) player.buffT -= dt;
+    const run = (sprinting ? 1.85 : 1) * (save.elixirs.swift ? 1.3 : 1) * (player.buffT > 0 ? 1.2 : 1);
+    const SP = 6.2 * run;
+    const dirX = Math.sin(player.yaw), dirZ = Math.cos(player.yaw);
+    player.vx += ((-dirX * fz + dirZ * fx) * SP - player.vx) * Math.min(1, dt * 8);
+    player.vz += ((-dirZ * fz - dirX * fx) * SP - player.vz) * Math.min(1, dt * 8);
+    let nx = Math.max(-420, Math.min(420, player.x + player.vx * dt));
+    let nz = Math.max(-420, Math.min(420, player.z + player.vz * dt));
+    colliders.forEach(c => {
+      const dx = nx - c.x, dz = nz - c.z, d = Math.hypot(dx, dz), rr = c.r + 0.55;
+      if (d < rr && d > 0.001) {
+        const ux = dx / d, uz = dz / d;
+        nx = c.x + ux * rr; nz = c.z + uz * rr;
+        const dot = player.vx * ux + player.vz * uz;
+        if (dot < 0) { player.vx -= dot * ux; player.vz -= dot * uz; }
+      }
+    });
+    // oriented box colliders (walls) — push out along the shallower penetration axis
+    const pad = 0.5;
+    boxes.forEach(b => {
+      const dx = nx - b.x, dz = nz - b.z;
+      const lx = dx * b.cos + dz * b.sin, lz = -dx * b.sin + dz * b.cos;
+      const hw = b.hw + pad, hd = b.hd + pad;
+      if (Math.abs(lx) < hw && Math.abs(lz) < hd) {
+        const ox = hw - Math.abs(lx), oz = hd - Math.abs(lz);
+        let nlx = lx, nlz = lz, nrmx, nrmz;
+        if (ox < oz) { nlx = (lx > 0 ? hw : -hw); nrmx = (lx > 0 ? b.cos : -b.cos); nrmz = (lx > 0 ? b.sin : -b.sin); }
+        else { nlz = (lz > 0 ? hd : -hd); nrmx = (lz > 0 ? -b.sin : b.sin); nrmz = (lz > 0 ? b.cos : -b.cos); }
+        nx = b.x + nlx * b.cos - nlz * b.sin;
+        nz = b.z + nlx * b.sin + nlz * b.cos;
+        const dot = player.vx * nrmx + player.vz * nrmz;
+        if (dot < 0) { player.vx -= dot * nrmx; player.vz -= dot * nrmz; }
+      }
+    });
+    player.x = nx; player.z = nz;
+    const spd = Math.hypot(player.vx, player.vz);
+    if (spd > 2 && player.onGround) { stepAcc += dt * (sprinting ? 3.4 : 2.2); if (stepAcc > 1) { stepAcc = 0; SFX.step(); } }
+    // jump — SPACE launches, simple gravity brings you back to ground()
+    if (keys[' '] && player.onGround) { player.vy = save.gear.boots ? 6.4 : 5.4; player.onGround = false; }
+    if (!player.onGround) {
+      player.vy -= 14.5 * dt;
+      player.jy += player.vy * dt;
+      if (player.jy <= 0) { player.jy = 0; player.vy = 0; player.onGround = true; SFX.step(); }
+    }
+    const headBob = started && spd > 1 && player.onGround ? Math.sin(t * (sprinting ? 13 : 9)) * 0.05 * Math.min(1, spd / 5) : 0;
+    camera.position.set(player.x, ground(player.x, player.z) + 1.72 + headBob + player.jy, player.z);
+    camera.rotation.order = 'YXZ';
+    camera.rotation.y = player.yaw; camera.rotation.x = player.pitch;
+  }
+  // characters
+  CHARACTERS.forEach(c => idleCharacter(c, t, dt));
+  // shards
+  SHARDS.forEach(s => {
+    if (s.taken) return;
+    s.mesh.rotation.y = t * 2; s.mesh.position.y = ground(s.x, s.z) + 1.1 + Math.sin(t * 2.4 + s.x) * 0.2;
+    s.halo.position.copy(s.mesh.position);
+    if (!inTavern && Math.hypot(player.x - s.x, player.z - s.z) < 2.6) {
+      s.taken = true; s.mesh.visible = false; s.halo.visible = false;
+      save.shards++; persist(); SFX.pickup();
+      toast(save.shards <= 5 ? '✦ GLOW-SHARD ' + Math.min(5, save.shards) + '/5' : '✦ A SPARE SHARD — ◈ +2');
+      if (save.shards > 5) setTokens(save.tokens + 2);
+    }
+  });
+  // relics
+  RELICS.forEach(r => {
+    if (r.taken) return;
+    r.mesh.rotation.y = t * 1.6; r.mesh.position.y = ground(r.x, r.z) + 1.0 + Math.sin(t * 2.1 + r.z) * 0.18;
+    r.halo.position.copy(r.mesh.position);
+    if (!inTavern && Math.hypot(player.x - r.x, player.z - r.z) < 2.6) {
+      r.taken = true; r.mesh.visible = false; r.halo.visible = false;
+      save.relics = (save.relics || 0) + 1; persist(); SFX.pickup();
+      toast('🏺 AMBER RELIC ' + Math.min(4, save.relics) + '/4');
+    }
+  });
+  // gatherable resources — only the ones near the player are drawn or animated
+  // (distance-culling here saves both draw calls and per-frame math on the ~110 items)
+  if (!inTavern) PICKUPS.forEach(p => {
+    if (p.taken) return;
+    const near = Math.abs(player.x - p.x) < 58 && Math.abs(player.z - p.z) < 58;
+    if (p.mesh.visible !== near) p.mesh.visible = near;
+    if (!near) return;
+    p.mesh.rotation.y = t * 1.5; p.mesh.position.y = ground(p.x, p.z) + 0.55 + Math.sin(t * 2.2 + p.ph) * 0.12;
+    if (Math.hypot(player.x - p.x, player.z - p.z) < 2.2) {
+      p.taken = true; p.mesh.visible = false; giveItem(p.kind);
+    }
+  });
+  // quest bookkeeping — a few times a second is plenty
+  questAcc += dt;
+  if (questAcc > 0.3) {
+    questAcc = 0;
+    if (!save._visited) save._visited = {};
+    VISITS.forEach(v => { if (!save._visited[v.id] && Math.hypot(player.x - v.x, player.z - v.z) < v.r) save._visited[v.id] = 1; });
+    BANNERS.forEach(b => { b.group.visible = qStateOf(b.c.id) !== 'none'; if (save.claimed[b.c.id]) b.cloth.material.color.setHex(0x4AC24A); });
+    for (const id of BOARD_IDS) { if (qStateOf(id) === 'active' && bountyDone(QUESTS[id])) completeBounty(id); }
+  }
+  // nearest talkable
+  let bestC = null, bd = 1e9;
+  NPCS.forEach(c => {
+    const d = Math.hypot(player.x - c.x, player.z - c.z);
+    if (d < bd) { bd = d; bestC = c; }
+  });
+  if (!inTavern && bestC && bd < 5 && activeB !== bestC) openDlg(bestC);
+  if ((bd > 8 || inTavern) && activeB) closeDlg();
+  // interact prompt
+  let promptNear = false;
+  if (Math.hypot(player.x - TAVERN_DOOR.x, player.z - TAVERN_DOOR.z) < 3.6) promptNear = true;
+  if (Math.hypot(player.x, player.z) < 3.2) promptNear = true;
+  if (save.quests.lamps === 'active') LAMPS.forEach(L => { if (!L.lit && Math.hypot(player.x - L.x, player.z - L.z) < 3.5) promptNear = true; });
+  if (save.quests.posy === 'active') DAISIES.forEach(d => { if (!d.picked && Math.hypot(player.x - d.x, player.z - d.z) < 3) promptNear = true; });
+  if (save.quests.beacon === 'active' && Math.hypot(player.x - BEACON.x, player.z - BEACON.z) < 5.5) promptNear = true;
+  RUBBLE.forEach(r => { if (!r.read && Math.hypot(player.x - r.x, player.z - r.z) < 3) promptNear = true; });
+  BANNERS.forEach(b => { if (!save.claimed[b.c.id] && qStateOf(b.c.id) === 'active' && Math.hypot(player.x - b.c.bx, player.z - b.c.bz) < 3.5) promptNear = true; });
+  PICKUPS.forEach(p => { if (!p.taken && Math.hypot(player.x - p.x, player.z - p.z) < 3.2) promptNear = true; });
+  interactEl.style.opacity = promptNear && !inTavern ? '1' : '0';
+  // ---- VITALS: stamina drains on sprint (in movement); vigor tracks warmth ----
+  let nearLight = Math.hypot(player.x, player.z) < 15;      // the plaza fire
+  if (!nearLight) for (const L of LAMPS) { if (L.lit && Math.hypot(player.x - L.x, player.z - L.z) < 10) { nearLight = true; break; } }
+  if (!nearLight && BEACON.lit && Math.hypot(player.x - BEACON.x, player.z - BEACON.z) < 18) nearLight = true;
+  const warm = nightness < 0.45 || nearLight || save.gear.lantern || save.gear.warding || inTavern;
+  player.hp = warm ? Math.min(100, player.hp + 7 * dt) : Math.max(30, player.hp - 2.2 * dt);
+  if (lanternLight) { lanternLight.position.set(player.x, ground(player.x, player.z) + 1.9, player.z); lanternLight.intensity = 11 + nightness * 5; }
+  // throttled HUD text (bars + tokens + level + quest log)
+  hudAcc += dt;
+  if (hudAcc > 0.25) {
+    hudAcc = 0;
+    hpFill.style.width = player.hp + '%';
+    stFill.style.width = player.st + '%';
+    tokN.textContent = save.tokens;
+    lvN.textContent = 1 + Math.floor((save.xp || 0) / 50);
+    renderQlog();
+  }
+  // compass: bearing ticks, POI pips, objective diamond, heading readout
+  const cw = compassEl.clientWidth;
+  const camBearing = Math.PI + player.yaw;
+  bearingTicks.forEach(bt => {
+    const ang = wrapAng(bt.rad - camBearing);
+    const vis = Math.abs(ang) < 1.1;
+    bt.el.style.display = vis ? 'block' : 'none';
+    if (vis) bt.el.style.left = (cw / 2 - ang / 1.1 * (cw / 2)) + 'px';
+  });
+  hdgEl.textContent = Math.round(((camBearing * 180 / Math.PI) % 360 + 360) % 360) + '°';
+  POI.forEach((p, i) => {
+    let ang = wrapAng(Math.atan2(-(p.x - player.x), -(p.z - player.z)) - player.yaw);
+    const vis = Math.abs(ang) < 1.1;
+    ticks[i].style.display = vis ? 'block' : 'none';
+    if (vis) ticks[i].style.left = (cw / 2 - ang / 1.1 * (cw / 2)) + 'px';
+  });
+  const obj = currentObjective();
+  if (obj) {
+    let ang = wrapAng(Math.atan2(-(obj.x - player.x), -(obj.z - player.z)) - player.yaw);
+    const clamped = Math.max(-1.08, Math.min(1.08, ang));
+    qmark.style.display = 'block';
+    qmark.style.left = (cw / 2 - clamped / 1.1 * (cw / 2)) + 'px';
+    qmark.style.opacity = Math.abs(ang) > 1.08 ? '0.45' : '1';
+    const odist = Math.hypot(player.x - obj.x, player.z - obj.z);
+    objEl.textContent = '◆ ' + obj.label + ' · ' + Math.round(odist) + 'm';
+    // light pillar on the objective
+    objBeam.visible = true;
+    objBeam.position.set(obj.x, ground(obj.x, obj.z) + 13, obj.z);
+    objBeam.material.opacity = 0.1 + 0.05 * Math.sin(t * 2.5);
+    objBeam.rotation.y = t * 0.3;
+    // breadcrumbs from your feet toward it
+    const dx = (obj.x - player.x) / (odist || 1), dz = (obj.z - player.z) / (odist || 1);
+    crumbs.forEach((c, i) => {
+      const dd = 3.5 + i * 3.5;
+      if (dd > odist - 2) { c.visible = false; return; }
+      const cx = player.x + dx * dd, cz = player.z + dz * dd;
+      c.visible = true;
+      c.position.set(cx, ground(cx, cz) + 0.35 + Math.sin(t * 3 - i * 0.9) * 0.08, cz);
+    });
+  } else { qmark.style.display = 'none'; objEl.textContent = ''; objBeam.visible = false; crumbs.forEach(c => c.visible = false); }
+  // beacon + altar ambience
+  if (BEACON.lit) { BEACON.light.intensity = 34 + Math.sin(t * 6.4) * 8; BEACON.flame.scale.y = 1 + Math.sin(t * 8.2) * 0.14; }
+  if (window.__altarGlow) window.__altarGlow.intensity = 16 + Math.sin(t * 1.4) * 5;
+  if (window.__keepGlow) window.__keepGlow.intensity = 20 + Math.sin(t * 1.9) * 6;
+  // natural sound mix by proximity
+  window.__night = nightness;
+  if (SFX.ctx) {
+    const pondD = Math.hypot(player.x - POND.x, player.z - POND.z) - POND.r;
+    const strD = Math.abs(player.z - STREAM.z) - 6;
+    const waterProx = Math.max(0, 1 - Math.max(0, Math.min(pondD, strD)) / 10);
+    const fireProx = Math.max(0, 1 - Math.hypot(player.x, player.z) / 7);
+    // the shrine and altar hum faintly instead of the removed portals
+    let humProx = Math.max(0, 1 - Math.hypot(player.x + 27, player.z + 25.5) / 8);
+    humProx = Math.max(humProx, 1 - Math.hypot(player.x - 55, player.z + 76) / 8);
+    const windAmt = 0.02 + Math.min(0.08, Math.max(0, ground(player.x, player.z)) * 0.006);
+    SFX.setAmbient(windAmt, waterProx * 0.05, fireProx, Math.max(0, humProx) * 0.03);
+  }
+  // ambience
+  if (window.__flame) { window.__flame.scale.y = 1 + Math.sin(t * 9) * 0.16; window.__fire.intensity = (46 + Math.sin(t * 7) * 10) * Math.max(0.3, lampGlow); }
+  const fp = flies.geometry.attributes.position, seed = flies.userData.seed;
+  for (let i = 0; i < seed.length; i++) {
+    fp.setY(i, fp.getY(i) + Math.sin(t * 1.3 + seed[i]) * 0.008);
+    fp.setX(i, fp.getX(i) + Math.cos(t * 0.7 + seed[i]) * 0.006);
+  }
+  fp.needsUpdate = true;
+  renderer.render(scene, camera);
+}
+loop();
+addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+// debug hooks for verification
+window.__player = player; window.__ground = ground; window.__camera = camera;
+window.__renderer = renderer; window.__scene = scene;
+window.__setTime = ph => { dayT = CYCLE * ph; applyCycle(ph); };
+window.__debug = { get cine() { return cine; }, get avatar() { return AVATAR; }, warm: startWarmScene,
+  save, QUESTS, BOARD_IDS, PICKUPS, NPCS, CHAR_QUESTS, VISITS, CLAIMS,
+  give: giveItem, accept: acceptBounty, complete: completeBounty, done: bountyDone,
+  qlog: renderQlog, obj: currentObjective, open: openDlg, colliders, boxes };
+</script>
+</body>
+</html>
